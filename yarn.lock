@@ -1094,6 +1094,11 @@
     "@jridgewell/resolve-uri" "3.1.0"
     "@jridgewell/sourcemap-codec" "1.4.14"
 
+"@noble/bls12-381@^1.4.0":
+  version "1.4.0"
+  resolved "https://registry.yarnpkg.com/@noble/bls12-381/-/bls12-381-1.4.0.tgz#4db0e1577ef85632347e86eee81062acdda6d65b"
+  integrity sha512-mIYqC2jMX7Lcu1QtU/FFftMPDSXNCdlGex6BSf5nPojHjnzzBgs1klFWpB1R8YjqHmOO9xrCzF19f2c42+z3vg==
+
 "@nodelib/fs.scandir@2.1.5":
   version "2.1.5"
   resolved "https://registry.yarnpkg.com/@nodelib/fs.scandir/-/fs.scandir-2.1.5.tgz#7619c2eb21b25483f6d167548b4cfd5a7488c3d5"
@@ -2324,6 +2329,13 @@ dotenv@^16.0.3:
   version "16.0.3"
   resolved "https://registry.yarnpkg.com/dotenv/-/dotenv-16.0.3.tgz#115aec42bac5053db3c456db30cc243a5a836a07"
   integrity sha512-7GO6HghkA5fYG9TYnNxi14/7K9f5occMlp3zXAuSxn7CKCxt9xbNWG7yF8hTCSUchlfWSe3uLmlPfigevRItzQ==
+
+drand-client@^1.1.0:
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/drand-client/-/drand-client-1.1.0.tgz#f04338048ff76496aa5f464d2f7cbffdc7a7fdb7"
+  integrity sha512-CszMNTfYxUafKp3eEJHbg5G4OO2Kh11XnWBQ8hnNYEfVybrxqsWLipagaLtT5mOXozB8aICoOCvZh3wYmTc8BQ==
+  dependencies:
+    "@noble/bls12-381" "^1.4.0"
 
 ecdsa-sig-formatter@1.0.11:
   version "1.0.11"
