@@ -7,7 +7,7 @@ import {
       fetchBeacon, 
       HttpChainClient, 
       HttpCachingChain, 
-    } from './drand-client'
+    } from 'drand-client'
 
 Web3Function.onRun(async (context: Web3FunctionContext) => {
   const { gelatoArgs, multiChainProvider } = context;
