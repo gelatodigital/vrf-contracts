@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.20;
 
-import {Owned} from "solmate/auth/Owned.sol";
+import {Ownable} from "openzeppelin/access/Ownable.sol";
 
-contract GelatoVRFProxy is Owned {
+contract GelatoVRFProxy is Ownable {
   address public implementation;
 
   event ImplementationChanged(address oldImplementation, address newImplementation);
 
-  constructor(address initialImplementation, address proxyOwner) Owned(proxyOwner) {
+  constructor(address initialImplementation) {
     implementation = initialImplementation;
   }
 
