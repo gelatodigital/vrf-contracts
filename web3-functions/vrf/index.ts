@@ -13,6 +13,7 @@ import {
 } from 'drand-client'
 
 const PROXY_ABI = ['function implementation() public view returns (address)'];
+const VRF_ABI = ['function addBeacon(uint256 round, uint256 beacon) external'];
 
 // w3f constants
 const MAX_RANGE = 100; // limit range of events to comply with rpc providers
@@ -27,9 +28,9 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
 
   const provider = multiChainProvider.default();
 
-  console.log(proxyAddress)
+  console.log(`proxyAddress: ${proxyAddress}`)
   const proxy = new Contract(proxyAddress, PROXY_ABI, provider);
-  const implementation: string = proxy.implementation();
+  const vrf  = new Contract(await proxy.implementation(), VRF_ABI, provider);
 
   const currentBlock = await provider.getBlockNumber();
   const lastBlockStr = await storage.get("lastBlockNumber");
@@ -45,7 +46,7 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
     console.log(`Fetching log events from blocks ${fromBlock} to ${toBlock}`);
     try {
       const eventFilter = {
-        address: implementation,
+        address: vrf.address,
         topics: [],
         fromBlock,
         toBlock,
@@ -60,6 +61,7 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
       };
     }
   }
+  console.log(logs)
 
   const options = {
     disableBeaconVerification: false, // `true` disables checking of signatures on beacons - faster but insecure!!!
@@ -67,13 +69,26 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
     chainVerificationParams: { chainHash: CHAIN_HASH, publicKey: PUBLIC_KEY }  // these are optional, but recommended! They are compared for parity against the `/info` output of a given node
   }
 
-  // if you want to connect to a single chain to grab the latest beacon you can simply do the following
-  const chain = new HttpCachingChain(`https://api.drand.sh/${CHAIN_HASH}`, options)
-  const client = new HttpChainClient(chain, options)
-  console.log(await fetchBeacon(client));
+  let drandResponse;
+  try {
+    // if you want to connect to a single chain to grab the latest beacon you can simply do the following
+    const chain = new HttpCachingChain(`https://api.drand.sh/${CHAIN_HASH}`, options)
+    const client = new HttpChainClient(chain, options)
+    drandResponse = await fetchBeacon(client);
+  } catch (err) {
+    return {
+      canExec: false,
+      message: `Drand call failed: ${(err as Error).message}`,
+    };
+  }
+
+  console.log(drandResponse)
+  const {round, randomness} = drandResponse;
+  
+  const callData = [{to: vrf.address, data: vrf.interface.encodeFunctionData("addBeacon", [round, randomness])}]
 
   return {
     canExec: true,
-    callData: [],
+    callData,
   };
 });
