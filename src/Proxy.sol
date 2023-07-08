@@ -12,7 +12,7 @@ contract GelatoVRFProxy is Ownable {
     implementation = initialImplementation;
   }
 
-  function setImplementation(address _implementation) external {
+  function setImplementation(address _implementation) external onlyOwner {
     emit ImplementationChanged(implementation, _implementation);
     implementation = _implementation;
   }
