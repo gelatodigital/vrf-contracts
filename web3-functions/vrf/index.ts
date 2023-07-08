@@ -1,5 +1,5 @@
 import { Log } from "@ethersproject/providers";
-import { Contract } from "ethers";
+import { ethers, Contract } from "ethers";
 
 import {
   Web3Function,
@@ -30,11 +30,11 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
 
   console.log(`proxyAddress: ${proxyAddress}`)
   const proxy = new Contract(proxyAddress, PROXY_ABI, provider);
-  const vrf  = new Contract(await proxy.implementation(), VRF_ABI, provider);
+  const vrf = new Contract(await proxy.implementation(), VRF_ABI, provider);
 
   const currentBlock = await provider.getBlockNumber();
   const lastBlockStr = await storage.get("lastBlockNumber");
-  let lastBlock = lastBlockStr ? parseInt(lastBlockStr) : currentBlock - 2000;
+  let lastBlock = lastBlockStr ? parseInt(lastBlockStr) : currentBlock - 700;
 
   // Fetch recent logs in range of 100 blocks
   const logs: Log[] = [];
@@ -81,14 +81,13 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
       message: `Drand call failed: ${(err as Error).message}`,
     };
   }
-
   console.log(drandResponse)
-  const {round, randomness} = drandResponse;
-  
-  const callData = [{to: vrf.address, data: vrf.interface.encodeFunctionData("addBeacon", [round, randomness])}]
+
+  const { round, randomness } = drandResponse;
+  const randUint256 = ethers.BigNumber.from("0x" + randomness);
 
   return {
     canExec: true,
-    callData,
+    callData: [{ to: vrf.address, data: vrf.interface.encodeFunctionData("addBeacon", [round, randUint256]) }],
   };
 });
