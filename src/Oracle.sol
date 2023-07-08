@@ -9,18 +9,15 @@ contract GelatoVRFOracle is Ownable {
   uint256 public latestRound;
 
   mapping(address => bool) operators;
-  address admin;
 
   event RequestBeacon(uint256 indexed round, address callbackReceiver) anonymous;
   event NewBeacon(uint256 indexed round, uint256 beacon);
 
   function addOperator(address _operator) external onlyOwner {
-    if (msg.sender != admin) revert Errors.NotAdmin();
     operators[_operator] = true;
   }
 
   function removeOperator(address _operator) external onlyOwner {
-    if (msg.sender != admin) revert Errors.NotAdmin();
     operators[_operator] = false;
   }
 
