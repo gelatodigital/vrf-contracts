@@ -1,4 +1,4 @@
-import * as _ from "lodash";
+import shuffle from "lodash/shuffle";
 import { Log } from "@ethersproject/providers";
 import { Contract } from "ethers";
 
@@ -25,7 +25,7 @@ const PUBLIC_KEY = 'a0b862a7527fee3a731bcb59280ab6abd62d5c0b6ea03dc4ddf6612fdfc9
 
 async function fetchDrandResponse(options) {
   // sequentially try different endpoints, in shuffled order for load-balancing
-  const urls = _.shuffle([
+  const urls = shuffle([
     // Protocol labs endpoints
     "https://api.drand.sh",
     "https://api2.drand.sh",
