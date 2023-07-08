@@ -16,6 +16,7 @@ const PROXY_ABI = ['function implementation() public view returns (address)'];
 const VRF_ABI = ['function addBeacon(uint256 round, uint256 beacon) external'];
 
 // w3f constants
+const MAX_DEPTH = 700;
 const MAX_RANGE = 100; // limit range of events to comply with rpc providers
 const MAX_REQUESTS = 100; // limit number of requests on every execution to avoid hitting timeout
 // drand constants
@@ -34,7 +35,7 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
 
   const currentBlock = await provider.getBlockNumber();
   const lastBlockStr = await storage.get("lastBlockNumber");
-  let lastBlock = lastBlockStr ? parseInt(lastBlockStr) : currentBlock - 700;
+  let lastBlock = lastBlockStr ? parseInt(lastBlockStr) : currentBlock - MAX_DEPTH;
 
   // Fetch recent logs in range of 100 blocks
   const logs: Log[] = [];
