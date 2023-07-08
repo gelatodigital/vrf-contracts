@@ -1,3 +1,4 @@
+import * as _ from "lodash";
 import { Log } from "@ethersproject/providers";
 import { Contract } from "ethers";
 
@@ -21,6 +22,36 @@ const MAX_REQUESTS = 100; // limit number of requests on every execution to avoi
 // drand constants
 const CHAIN_HASH = 'dbd506d6ef76e5f386f41c651dcb808c5bcbd75471cc4eafa3f4df7ad4e4c493' // fastnet hash
 const PUBLIC_KEY = 'a0b862a7527fee3a731bcb59280ab6abd62d5c0b6ea03dc4ddf6612fdfc9d01f01c31542541771903475eb1ec6615f8d0df0b8b6dce385811d6dcf8cbefb8759e5e616a3dfd054c928940766d9a5b9db91e3b697e5d70a975181e007f87fca5e'
+
+async function fetchDrandResponse(options) {
+  // sequentially try different endpoints, in shuffled order for load-balancing
+  const urls = _.shuffle([
+    // Protocol labs endpoints
+    "https://api.drand.sh",
+    "https://api2.drand.sh",
+    "https://api3.drand.sh",
+    // Cloudflare
+    "https://drand.cloudflare.com",
+    // Storswift
+    "https://api.drand.secureweb3.com:6875",
+  ])
+
+  console.log("Fetching randomness");
+  const errors: Error[] = [];
+  for (const url of urls) {
+    console.log(`Trying ${url}...`)
+    const chain = new HttpCachingChain(`${url}/${CHAIN_HASH}`, options)
+    const client = new HttpChainClient(chain, options)
+    try {
+      const drandResponse = await fetchBeacon(client);
+      console.log(drandResponse);
+      return drandResponse;
+    } catch (err) {
+      errors.push(err as Error)
+    }
+  }
+  throw errors.pop()
+}
 
 Web3Function.onRun(async (context: Web3FunctionContext) => {
   const { userArgs, storage, multiChainProvider } = context;
@@ -69,21 +100,7 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
     chainVerificationParams: { chainHash: CHAIN_HASH, publicKey: PUBLIC_KEY }  // these are optional, but recommended! They are compared for parity against the `/info` output of a given node
   }
 
-  let drandResponse;
-  try {
-    // if you want to connect to a single chain to grab the latest beacon you can simply do the following
-    const chain = new HttpCachingChain(`https://api.drand.sh/${CHAIN_HASH}`, options)
-    const client = new HttpChainClient(chain, options)
-    drandResponse = await fetchBeacon(client);
-  } catch (err) {
-    return {
-      canExec: false,
-      message: `Drand call failed: ${(err as Error).message}`,
-    };
-  }
-
-  console.log(drandResponse)
-  const {round, randomness} = drandResponse;
+  const {round, randomness} = await fetchDrandResponse(options);
   
   const callData = [{to: vrf.address, data: vrf.interface.encodeFunctionData("addBeacon", [round, randomness])}]
 
