@@ -9,10 +9,10 @@ contract DeployMock is Script {
   function run() public {
     // vm.startBroadcast(vm.envUint("PRIVATE_KEY"));
     vm.startBroadcast(vm.envUint("ANVIL_KEY"));
-    GelatoVRFOracle vrf = new GelatoVRFOracle();
-    GelatoVRFProxy proxy = new GelatoVRFProxy(address(vrf));
+    // GelatoVRFOracle vrf = new GelatoVRFOracle();
+    // GelatoVRFProxy proxy = new GelatoVRFProxy(address(vrf));
     // proxy.setImplementation();
-    vrf.requestBeacon();
+    // vrf.requestBeacon();
 
     vm.stopBroadcast();
   }

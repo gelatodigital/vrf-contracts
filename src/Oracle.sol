@@ -2,31 +2,46 @@
 pragma solidity 0.8.20;
 
 import {Errors} from "./Errors.sol";
+import {Ownable} from "openzeppelin/access/Ownable.sol";
 
-contract GelatoVRFOracle {
-  mapping(uint256 => uint256) beaconOf;
-  uint256 latestRound;
-  address operator;
+contract GelatoVRFOracle is Ownable {
+  mapping(uint256 => uint256) public beaconOf;
+  uint256 public latestRound;
 
-  event RequestBeacon(address callbackReceiver) anonymous;
+  mapping(address => bool) operators;
+  address admin;
 
-  constructor(address _operator) {
-    operator = _operator;
+  event RequestBeacon(uint256 indexed round, address callbackReceiver) anonymous;
+  event NewBeacon(uint256 indexed round, uint256 beacon);
+
+  function addOperator(address _operator) external onlyOwner {
+    if (msg.sender != admin) revert Errors.NotAdmin();
+    operators[_operator] = true;
+  }
+
+  function removeOperator(address _operator) external onlyOwner {
+    if (msg.sender != admin) revert Errors.NotAdmin();
+    operators[_operator] = false;
   }
 
   function addBeacon(uint256 round, uint256 beacon) external {
-    if (msg.sender != operator) revert Errors.NotOperator();
+    if (!operators[msg.sender]) revert Errors.NotOperator();
+
     beaconOf[round] = beacon;
     latestRound = round;
 
-    // TODO should this emit something? Check for conflicts with anon events
+    emit NewBeacon(round, beacon);
   }
 
-  function requestBeacon() external {
-    emit RequestBeacon(address(0));
+  function getBeacon(uint256 round) view external returns (uint256) {
+    randomness = beaconOf[round];
+  } 
+
+  function requestBeacon(uint256 round) external {
+    emit RequestBeacon(round, address(0));
   }
 
-  function requestBeaconCallback() external {
-    emit RequestBeacon(msg.sender);
+  function requestBeaconCallback(uint256 round) external {
+    emit RequestBeacon(round, msg.sender);
   }
 }
