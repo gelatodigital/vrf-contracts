@@ -84,10 +84,10 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
   console.log(drandResponse)
 
   const { round, randomness } = drandResponse;
-  const randUint256 = ethers.BigNumber.from("0x" + randomness);
+  const randomWord = ethers.BigNumber.from(`0x${randomness}`);
 
   return {
     canExec: true,
-    callData: [{ to: vrf.address, data: vrf.interface.encodeFunctionData("addBeacon", [round, randUint256]) }],
+    callData: [{ to: vrf.address, data: vrf.interface.encodeFunctionData("addBeacon", [round, randomWord]) }],
   };
 });
