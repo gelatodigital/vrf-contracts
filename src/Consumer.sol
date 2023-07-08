@@ -2,5 +2,5 @@
 pragma solidity 0.8.20;
 
 interface GelatoVRFConsumer {
-  function onBeaconAvailable(uint256[] calldata beacon) external;
+  function onRandomnessAvailable(uint256 round, uint256[] calldata randomWords) external;
 }
