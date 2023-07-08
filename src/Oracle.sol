@@ -33,9 +33,9 @@ contract GelatoVRFOracle is Ownable {
     emit NewBeacon(round, beacon);
   }
 
-  function getBeacon(uint256 round) view external returns (uint256) {
+  function getBeacon(uint256 round) external view returns (uint256) {
     return beaconOf[round];
-  } 
+  }
 
   function requestBeacon(uint256 round) external {
     emit RequestBeacon(round, address(0));
