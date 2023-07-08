@@ -12,5 +12,8 @@ anvil
 ```bash
 forge script script/DeployMock.s.sol --rpc-url http://127.0.0.1:8545 --broadcast
 ```
-5. Then *from the w3f repository* just call the web3 function on the `--network anvil`
+5. Then **from the w3f repository** just call the web3 function on the local network
+```bash
+npx  hardhat w3f-run vrf --logs --network anvil
+```
 
