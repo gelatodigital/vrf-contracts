@@ -1,19 +1,24 @@
 {
   "extends": "@tsconfig/recommended/tsconfig.json",
   "compilerOptions": {
-    "lib": ["es2020"],
-    "noImplicitAny": false,
+    "noImplicitAny": true,
     "allowSyntheticDefaultImports": true,
     "downlevelIteration": true,
     "skipLibCheck": true,
     "moduleResolution": "node",
-    "pretty": true,
     "resolveJsonModule": true,
     "typeRoots": ["./node_modules/@types"],
-    "outDir": "dist",
-    "declaration": true,
-    "useUnknownInCatchVariables": false
+    "outDir": "dist"
   },
-  "include": ["scritps", "web3-functions", "jest.config.ts"],
+  "files": ["hardhat.config.ts"],
+  "include": [
+    "hardhat",
+    "deploy",
+    "scripts",
+    "src",
+    "test",
+    "typechain",
+    "web3-functions"
+  ],
   "exclude": ["node_modules"]
 }

@@ -1,5 +1,9 @@
+# Ignore:
 artifacts
 cache
 dist
-node_modules
-.tmp
+coverage
+contracts/vendor
+typechain
+yarn.lock
+yarn-error.log
