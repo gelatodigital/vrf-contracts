@@ -7,12 +7,10 @@ import {GelatoVRFProxy} from "src/Proxy.sol";
 
 contract DeployMock is Script {
   function run() public {
-    // vm.startBroadcast(vm.envUint("PRIVATE_KEY"));
     vm.startBroadcast(vm.envUint("ANVIL_KEY"));
-    // GelatoVRFOracle vrf = new GelatoVRFOracle();
-    // GelatoVRFProxy proxy = new GelatoVRFProxy(address(vrf));
-    // proxy.setImplementation();
-    // vrf.requestBeacon();
+    GelatoVRFOracle vrf = new GelatoVRFOracle();
+    new GelatoVRFProxy(address(vrf));
+    vrf.requestBeacon(1234);
 
     vm.stopBroadcast();
   }
