@@ -34,7 +34,7 @@ contract GelatoVRFOracle is Ownable {
   }
 
   function getBeacon(uint256 round) view external returns (uint256) {
-    randomness = beaconOf[round];
+    return beaconOf[round];
   } 
 
   function requestBeacon(uint256 round) external {
