@@ -94,7 +94,6 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
       };
     }
   }
-  console.log(logs)
 
   const options = {
     disableBeaconVerification: false, // `true` disables checking of signatures on beacons - faster but insecure!!!
@@ -103,6 +102,7 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
   }
 
   const { round, randomness } = await fetchDrandResponse(options);
+  console.log("round : ", round)
   const randomWord = ethers.BigNumber.from(`0x${randomness}`);
 
   return {
