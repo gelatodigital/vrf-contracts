@@ -1,41 +1,24 @@
-# Web3 Functions Template <!-- omit in toc -->
+# Foundry instructions
 
-Use this template to write, test and deploy Web3 Functions.
-
-## What are Web3 Functions?
-
-Web3 Functions are decentralized cloud functions that work similarly to AWS Lambda or Google Cloud, just for web3. They enable developers to execute on-chain transactions based on arbitrary off-chain data (APIs / subgraphs, etc) & computation. These functions are written in Typescript, stored on IPFS and run by Gelato.
-
-## Documentation
-
-You can find the official Web3 Functions documentation [here](https://docs.gelato.network/developer-services/web3-functions).
-
-## Private Beta Restriction
-
-Web3 Functions are currently in private Beta and can only be used by whitelisted users. If you would like to be added to the waitlist, please reach out to the team on [Discord](https://discord.com/invite/ApbA39BKyJ) or apply using this [form](https://form.typeform.com/to/RrEiARiI).
-
-## Table of Content
-
-- [What are Web3 Functions?](#what-are-web3-functions)
-- [Documentation](#documentation)
-- [Private Beta Restriction](#private-beta-restriction)
-- [Table of Content](#table-of-content)
-- [Project Setup](#project-setup)
-- [Hardhat Config](#hardhat-config)
-- [Write a Web3 Function](#write-a-web3-function)
-- [Test your web3 function](#test-your-web3-function)
-  - [Calling your web3 function](#calling-your-web3-function)
-  - [Writing unit test for your web3 function](#writing-unit-test-for-your-web3-function)
-- [Use User arguments](#use-user-arguments)
-- [Use State / Storage](#use-state--storage)
-- [Use user secrets](#use-user-secrets)
-- [Deploy your Web3Function on IPFS](#deploy-your-web3function-on-ipfs)
-- [Create your Web3Function task](#create-your-web3function-task)
-- [More examples](#more-examples)
-  - [Coingecko oracle](#coingecko-oracle)
-  - [Event listener](#event-listener)
-  - [Secrets](#secrets)
-  - [Advertising Board](#advertising-board)
+To deploy contracts on local testnet:
+1. First download the dependecies
+```bash
+forge install
+```
+2. Run a local instance of anvil
+```bash
+anvil
+```
+3. Add the first private key given by anvil to `.env` as `ANVIL_KEY`
+4. Then deploy the contracts on anvil
+```bash
+forge script script/DeployMock.s.sol --rpc-url http://127.0.0.1:8545 --broadcast
+```
+5. Then just call the web3 function on the local network
+```bash
+npx  hardhat w3f-run vrf --logs --network anvil
+```
+# Hardhat instructions
 
 ## Project Setup
 
@@ -74,75 +57,6 @@ In `hardhat.config.ts`, you can set up configurations for your Web3 Function run
     debug: false,
     networks: ["mumbai", "goerli", "baseGoerli"],
   },
-```
-
-## Write a Web3 Function
-
-- Go to `web3-functions/index.ts`
-- Write your Web3 Function logic within the `Web3Function.onRun` function.
-- Example:
-
-```typescript
-import {
-  Web3Function,
-  Web3FunctionContext,
-} from "@gelatonetwork/web3-functions-sdk";
-import { Contract, ethers } from "ethers";
-import ky from "ky"; // we recommend using ky as axios doesn't support fetch by default
-
-const ORACLE_ABI = [
-  "function lastUpdated() external view returns(uint256)",
-  "function updatePrice(uint256)",
-];
-
-Web3Function.onRun(async (context: Web3FunctionContext) => {
-  const { userArgs, gelatoArgs, multiChainProvider } = context;
-
-  const provider = multiChainProvider.default();
-
-  // Retrieve Last oracle update time
-  const oracleAddress = "0x71B9B0F6C999CBbB0FeF9c92B80D54e4973214da";
-  const oracle = new Contract(oracleAddress, ORACLE_ABI, provider);
-  const lastUpdated = parseInt(await oracle.lastUpdated());
-  console.log(`Last oracle update: ${lastUpdated}`);
-
-  // Check if it's ready for a new update
-  const nextUpdateTime = lastUpdated + 300; // 5 min
-  const timestamp = (await provider.getBlock("latest")).timestamp;
-  console.log(`Next oracle update: ${nextUpdateTime}`);
-  if (timestamp < nextUpdateTime) {
-    return { canExec: false, message: `Time not elapsed` };
-  }
-
-  // Get current price on coingecko
-  const currency = "ethereum";
-  const priceData: any = await ky
-    .get(
-      `https://api.coingecko.com/api/v3/simple/price?ids=${currency}&vs_currencies=usd`,
-      { timeout: 5_000, retry: 0 }
-    )
-    .json();
-  price = Math.floor(priceData[currency].usd);
-  console.log(`Updating price: ${price}`);
-
-  // Return execution call data
-  return {
-    canExec: true,
-    callData: [{to: oracleAddress, data: oracle.interface.encodeFunctionData("updatePrice", [price])}],
-  };
-});
-```
-
-- Each Web3 Function has a `schema.json` file to specify the runtime configuration. In later versions you will have more optionality to define what resources your Web3 Function requires.
-
-```json
-{
-  "web3FunctionVersion": "2.0.0",
-  "runtime": "js-1.0",
-  "memory": 128,
-  "timeout": 30,
-  "userArgs": {}
-}
 ```
 
 ## Test your web3 function
@@ -441,24 +355,4 @@ Run:<br/>
 Create task: <br/>
 `yarn create-task:adboard`
 
-## Foundry instructions
-
-To deploy contracts on local testnet:
-1. First download the dependecies
-```bash
-forge install
-```
-2. Run a local instance of anvil
-```bash
-anvil
-```
-3. Add the first private key given by anvil to `.env` as `ANVIL_KEY`
-4. Then deploy the contracts on anvil
-```bash
-forge script script/DeployMock.s.sol --rpc-url http://127.0.0.1:8545 --broadcast
-```
-5. Then just call the web3 function on the local network
-```bash
-npx  hardhat w3f-run vrf --logs --network anvil
-```
 
