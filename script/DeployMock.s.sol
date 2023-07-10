@@ -2,8 +2,8 @@
 pragma solidity 0.8.20;
 
 import "forge-std/Script.sol";
-import {GelatoVRFOracle} from "src/Oracle.sol";
-import {GelatoVRFProxy} from "src/Proxy.sol";
+import {GelatoVRFOracle} from "contracts/Oracle.sol";
+import {GelatoVRFProxy} from "contracts/Proxy.sol";
 
 contract DeployMock is Script {
   function run() public {
