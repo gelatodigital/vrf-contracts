@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.19;
 
-import {Ownable} from "openzeppelin/access/Ownable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract GelatoVRFProxy is Ownable {
   address public implementation;

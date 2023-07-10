@@ -2,9 +2,8 @@
 pragma solidity 0.8.19;
 
 import {Errors} from "./Errors.sol";
-import {Ownable} from "openzeppelin/access/Ownable.sol";
 
-contract GelatoVRFOracle is Ownable {
+contract GelatoVRFOracle {
   mapping(uint256 => uint256) public beaconOf;
   uint256 public latestRound;
 
@@ -13,11 +12,11 @@ contract GelatoVRFOracle is Ownable {
   event RequestBeacon(uint256 indexed round, address callbackReceiver) anonymous;
   event NewBeacon(uint256 indexed round, uint256 beacon);
 
-  function addOperator(address _operator) external onlyOwner {
+  function addOperator(address _operator) external {
     operators[_operator] = true;
   }
 
-  function removeOperator(address _operator) external onlyOwner {
+  function removeOperator(address _operator) external {
     operators[_operator] = false;
   }
 
