@@ -1,6 +1,6 @@
 import shuffle from "lodash/shuffle";
 import { Log } from "@ethersproject/providers";
-import { Contract } from "ethers";
+import { ethers, Contract } from "ethers";
 
 import {
   Web3Function,
@@ -18,6 +18,7 @@ const PROXY_ABI = ['function implementation() public view returns (address)'];
 const VRF_ABI = ['function addBeacon(uint256 round, uint256 beacon) external'];
 
 // w3f constants
+const MAX_DEPTH = 700;
 const MAX_RANGE = 100; // limit range of events to comply with rpc providers
 const MAX_REQUESTS = 100; // limit number of requests on every execution to avoid hitting timeout
 // drand constants
@@ -62,11 +63,11 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
 
   console.log(`proxyAddress: ${proxyAddress}`)
   const proxy = new Contract(proxyAddress, PROXY_ABI, provider);
-  const vrf  = new Contract(await proxy.implementation(), VRF_ABI, provider);
+  const vrf = new Contract(await proxy.implementation(), VRF_ABI, provider);
 
   const currentBlock = await provider.getBlockNumber();
   const lastBlockStr = await storage.get("lastBlockNumber");
-  let lastBlock = lastBlockStr ? parseInt(lastBlockStr) : currentBlock - 2000;
+  let lastBlock = lastBlockStr ? parseInt(lastBlockStr) : currentBlock - MAX_DEPTH;
 
   // Fetch recent logs in range of 100 blocks
   const logs: Log[] = [];
@@ -93,7 +94,6 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
       };
     }
   }
-  console.log(logs)
 
   const options = {
     disableBeaconVerification: false, // `true` disables checking of signatures on beacons - faster but insecure!!!
@@ -101,12 +101,12 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
     chainVerificationParams: { chainHash: CHAIN_HASH, publicKey: PUBLIC_KEY }  // these are optional, but recommended! They are compared for parity against the `/info` output of a given node
   }
 
-  const {round, randomness} = await fetchDrandResponse(options);
-  
-  const callData = [{to: vrf.address, data: vrf.interface.encodeFunctionData("addBeacon", [round, randomness])}]
+  const { round, randomness } = await fetchDrandResponse(options);
+  console.log("round : ", round)
+  const randomWord = ethers.BigNumber.from(`0x${randomness}`);
 
   return {
     canExec: true,
-    callData,
+    callData: [{ to: vrf.address, data: vrf.interface.encodeFunctionData("addBeacon", [round, randomWord]) }],
   };
 });
