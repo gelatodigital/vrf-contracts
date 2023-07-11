@@ -1,22 +1,15 @@
 import hre from "hardhat";
-import path from "path";
-import { expect } from "chai";
+import { expect, assert } from "chai";
 import { before } from "mocha";
 import { Web3FunctionHardhat } from "@gelatonetwork/web3-functions-sdk/hardhat-plugin";
-import { Web3FunctionLoader } from "@gelatonetwork/web3-functions-sdk/loader";
 import { ContractFactory } from "ethers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { GelatoVRFInbox, MockVRFConsumer } from "../typechain";
 import { Web3FunctionUserArgs } from "@gelatonetwork/automate-sdk";
+import { Web3FunctionResultV2 } from "@gelatonetwork/web3-functions-sdk/*";
 const { deployments, w3f, ethers } = hre;
 
-const w3fName = "vrf";
-const w3fRootDir = path.join("web3-functions");
-const w3fPath = path.join(w3fRootDir, w3fName, "index.ts");
-
-describe("VRF Tests", function () {
-  this.timeout(0)
-
+describe("VRF Test Suite", function () {
   // Signers
   let deployer: SignerWithAddress
   let user: SignerWithAddress
@@ -52,10 +45,17 @@ describe("VRF Tests", function () {
   })
 
   it("Return canExec: true", async () => {
-    const randomness = await inbox.connect(user).requestRandomness(1234, mockConsumer.address)
-    // console.log("randmoness received: ", randomness)
-    const { result } = await vrf.run({userArgs})
+    await inbox.connect(user).requestRandomness(1234, mockConsumer.address)
+
+    const exec = await vrf.run({userArgs})
+    const res = exec.result as Web3FunctionResultV2;
+
+    if (!res.canExec) assert.fail(res.message);
+
+    const calldata = res.callData[0];
+    await deployer.sendTransaction({ to: calldata.to, data: calldata.data });
+
     console.log(await mockConsumer.latestRound())
-    console.log("vrf result: ", result)
+    console.log(await mockConsumer.beaconOf(mockConsumer.latestRound()))
   });
 });
