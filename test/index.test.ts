@@ -1,5 +1,5 @@
 import hre from "hardhat";
-import { expect, assert } from "chai";
+import { assert } from "chai";
 import { before } from "mocha";
 import { Web3FunctionHardhat } from "@gelatonetwork/web3-functions-sdk/hardhat-plugin";
 import { ContractFactory } from "ethers";
