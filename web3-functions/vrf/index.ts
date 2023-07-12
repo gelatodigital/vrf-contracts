@@ -12,17 +12,21 @@ import {
   HttpChainClient,
   HttpCachingChain,
   ChainOptions,
-} from 'drand-client'
+} from "drand-client";
 
-const CALLBACK_ABI = ["function fullfillRandomness(uint256 round, uint256 randomness) external"]
+const CALLBACK_ABI = [
+  "function fullfillRandomness(uint256 round, uint256 randomness) external",
+];
 
 // w3f constants
 const MAX_DEPTH = 700;
 const MAX_RANGE = 100; // limit range of events to comply with rpc providers
 const MAX_REQUESTS = 100; // limit number of requests on every execution to avoid hitting timeout
 // drand constants
-const CHAIN_HASH = 'dbd506d6ef76e5f386f41c651dcb808c5bcbd75471cc4eafa3f4df7ad4e4c493' // fastnet hash
-const PUBLIC_KEY = 'a0b862a7527fee3a731bcb59280ab6abd62d5c0b6ea03dc4ddf6612fdfc9d01f01c31542541771903475eb1ec6615f8d0df0b8b6dce385811d6dcf8cbefb8759e5e616a3dfd054c928940766d9a5b9db91e3b697e5d70a975181e007f87fca5e'
+const CHAIN_HASH =
+  "dbd506d6ef76e5f386f41c651dcb808c5bcbd75471cc4eafa3f4df7ad4e4c493"; // fastnet hash
+const PUBLIC_KEY =
+  "a0b862a7527fee3a731bcb59280ab6abd62d5c0b6ea03dc4ddf6612fdfc9d01f01c31542541771903475eb1ec6615f8d0df0b8b6dce385811d6dcf8cbefb8759e5e616a3dfd054c928940766d9a5b9db91e3b697e5d70a975181e007f87fca5e";
 
 async function fetchDrandResponse(options: ChainOptions) {
   // sequentially try different endpoints, in shuffled order for load-balancing
@@ -35,23 +39,23 @@ async function fetchDrandResponse(options: ChainOptions) {
     "https://drand.cloudflare.com",
     // Storswift
     "https://api.drand.secureweb3.com:6875",
-  ])
+  ]);
 
   console.log("Fetching randomness");
   const errors: Error[] = [];
   for (const url of urls) {
-    console.log(`Trying ${url}...`)
-    const chain = new HttpCachingChain(`${url}/${CHAIN_HASH}`, options)
-    const client = new HttpChainClient(chain, options)
+    console.log(`Trying ${url}...`);
+    const chain = new HttpCachingChain(`${url}/${CHAIN_HASH}`, options);
+    const client = new HttpChainClient(chain, options);
     try {
       const drandResponse = await fetchBeacon(client);
       console.log(drandResponse);
       return drandResponse;
     } catch (err) {
-      errors.push(err as Error)
+      errors.push(err as Error);
     }
   }
-  throw errors.pop()
+  throw errors.pop();
 }
 
 Web3Function.onRun(async (context: Web3FunctionContext) => {
@@ -62,7 +66,9 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
 
   const currentBlock = await provider.getBlockNumber();
   const lastBlockStr = await storage.get("lastBlockNumber");
-  let lastBlock = lastBlockStr ? parseInt(lastBlockStr) : currentBlock - MAX_DEPTH;
+  let lastBlock = lastBlockStr
+    ? parseInt(lastBlockStr)
+    : currentBlock - MAX_DEPTH;
 
   // Fetch recent logs in range of 100 blocks
   const logs: Log[] = [];
@@ -90,23 +96,31 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
     }
   }
 
-  console.log(logs)
+  console.log(logs);
 
-  const callbackAddr = "0x100Fe89E27ED155C8098264b8E57c57f6249C653"
-  const callback = new Contract(callbackAddr, CALLBACK_ABI, provider)
+  const callbackAddr: string = "0x100Fe89E27ED155C8098264b8E57c57f6249C653";
+  const callback = new Contract(callbackAddr, CALLBACK_ABI, provider);
 
   const options = {
     disableBeaconVerification: false, // `true` disables checking of signatures on beacons - faster but insecure!!!
     noCache: false, // `true` disables caching when retrieving beacons for some providers
-    chainVerificationParams: { chainHash: CHAIN_HASH, publicKey: PUBLIC_KEY }  // these are optional, but recommended! They are compared for parity against the `/info` output of a given node
-  }
+    chainVerificationParams: { chainHash: CHAIN_HASH, publicKey: PUBLIC_KEY }, // these are optional, but recommended! They are compared for parity against the `/info` output of a given node
+  };
 
   const { round, randomness } = await fetchDrandResponse(options);
-  console.log("W3F: round: ", round)
+  console.log("W3F: round: ", round);
   const randomWord = ethers.BigNumber.from(`0x${randomness}`);
 
   return {
     canExec: true,
-    callData: [{ to: callback.address, data: callback.interface.encodeFunctionData("fullfillRandomness", [round, randomWord]) }],
+    callData: [
+      {
+        to: callback.address,
+        data: callback.interface.encodeFunctionData("fullfillRandomness", [
+          round,
+          randomWord,
+        ]),
+      },
+    ],
   };
 });
