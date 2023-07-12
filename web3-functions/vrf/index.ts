@@ -14,8 +14,7 @@ import {
   ChainOptions,
 } from 'drand-client'
 
-const PROXY_ABI = ['function implementation() public view returns (address)'];
-const VRF_ABI = ['function addBeacon(uint256 round, uint256 beacon) external'];
+const CALLBACK_ABI = ["function fullfillRandomness(uint256 round, uint256 randomness) external"]
 
 // w3f constants
 const MAX_DEPTH = 700;
@@ -57,13 +56,9 @@ async function fetchDrandResponse(options: ChainOptions) {
 
 Web3Function.onRun(async (context: Web3FunctionContext) => {
   const { userArgs, storage, multiChainProvider } = context;
-  const proxyAddress = userArgs.proxyAddress as string;
+  const inbox = userArgs.inbox as string;
 
   const provider = multiChainProvider.default();
-
-  console.log(`proxyAddress: ${proxyAddress}`)
-  const proxy = new Contract(proxyAddress, PROXY_ABI, provider);
-  const vrf = new Contract(await proxy.implementation(), VRF_ABI, provider);
 
   const currentBlock = await provider.getBlockNumber();
   const lastBlockStr = await storage.get("lastBlockNumber");
@@ -79,7 +74,7 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
     console.log(`Fetching log events from blocks ${fromBlock} to ${toBlock}`);
     try {
       const eventFilter = {
-        address: vrf.address,
+        address: inbox,
         topics: [],
         fromBlock,
         toBlock,
@@ -95,6 +90,11 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
     }
   }
 
+  console.log(logs)
+
+  const callbackAddr: string = "0x100Fe89E27ED155C8098264b8E57c57f6249C653"
+  const callback = new Contract(callbackAddr, CALLBACK_ABI, provider)
+
   const options = {
     disableBeaconVerification: false, // `true` disables checking of signatures on beacons - faster but insecure!!!
     noCache: false, // `true` disables caching when retrieving beacons for some providers
@@ -102,11 +102,11 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
   }
 
   const { round, randomness } = await fetchDrandResponse(options);
-  console.log("round : ", round)
+  console.log("W3F: round: ", round)
   const randomWord = ethers.BigNumber.from(`0x${randomness}`);
 
   return {
     canExec: true,
-    callData: [{ to: vrf.address, data: vrf.interface.encodeFunctionData("addBeacon", [round, randomWord]) }],
+    callData: [{ to: callback.address, data: callback.interface.encodeFunctionData("fullfillRandomness", [round, randomWord]) }],
   };
 });
