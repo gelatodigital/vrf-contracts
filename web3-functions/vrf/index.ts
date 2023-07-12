@@ -1,3 +1,4 @@
+import * as ethers from "ethers";
 import shuffle from "lodash/shuffle";
 import { Log } from "@ethersproject/providers";
 import { Contract } from "ethers";
@@ -24,13 +25,13 @@ const MAX_RANGE = 100; // limit range of events to comply with rpc providers
 const MAX_REQUESTS = 100; // limit number of requests on every execution to avoid hitting timeout
 
 // drand constants
-const CHAIN_HASH: string = 'dbd506d6ef76e5f386f41c651dcb808c5bcbd75471cc4eafa3f4df7ad4e4c493' // fastnet hash
+const FASTNET_CHAIN_HASH: string = 'dbd506d6ef76e5f386f41c651dcb808c5bcbd75471cc4eafa3f4df7ad4e4c493'
 const PUBLIC_KEY: string = 'a0b862a7527fee3a731bcb59280ab6abd62d5c0b6ea03dc4ddf6612fdfc9d01f01c31542541771903475eb1ec6615f8d0df0b8b6dce385811d6dcf8cbefb8759e5e616a3dfd054c928940766d9a5b9db91e3b697e5d70a975181e007f87fca5e'
 
 const DRAND_OPTIONS: ChainOptions = {
   disableBeaconVerification: false, 
   noCache: false, 
-  chainVerificationParams: { chainHash: CHAIN_HASH, publicKey: PUBLIC_KEY } 
+  chainVerificationParams: { chainHash: FASTNET_CHAIN_HASH, publicKey: PUBLIC_KEY } 
 }
 
 async function fetchDrandResponse(round?: number) {
@@ -49,8 +50,8 @@ async function fetchDrandResponse(round?: number) {
   console.log("Fetching randomness");
   const errors: Error[] = [];
   for (const url of urls) {
-    console.log(`Trying ${url}...`);
-    const chain = new HttpCachingChain(`${url}/${CHAIN_HASH}`, DRAND_OPTIONS)
+    console.log(`Trying ${url}...`)
+    const chain = new HttpCachingChain(`${url}/${FASTNET_CHAIN_HASH}`, DRAND_OPTIONS)
     const client = new HttpChainClient(chain, DRAND_OPTIONS)
     try {
       return await fetchBeacon(client, round);
@@ -110,15 +111,10 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
     const event = inbox.interface.parseLog(log);
     const [roundRequested, callbackAddress] = event.args;
     const callback = new Contract(callbackAddress, CALLBACK_ABI, provider)
-    // const { round: roundReceived, randomness } = await fetchDrandResponse(roundRequested == 0 ? undefined : roundRequested);
-    // const encodedRandomness = ethers.BigNumber.from(`0x${randomness}`);
-    // assert roundReceived == roundRequested
-    // callData.push({to: callbackAddress, data: callback.interface.encodeFunctionData("fullfillRandomness", [roundReceived, encodedRandomness])})
-    callData.push({to: callbackAddress, data: callback.interface.encodeFunctionData("fullfillRandomness", [roundRequested, 123456789])})
+    const { round: roundReceived, randomness } = await fetchDrandResponse(roundRequested || undefined);
+    const encodedRandomness = ethers.BigNumber.from(`0x${randomness}`);
+    callData.push({to: callbackAddress, data: callback.interface.encodeFunctionData("fullfillRandomness", [roundReceived, encodedRandomness])})
   }
-
-  // console.log("W3F: round: ", round)
-  // const randomWord = 
 
   return {
     canExec: true,
