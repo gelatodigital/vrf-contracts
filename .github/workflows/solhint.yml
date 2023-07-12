@@ -1,0 +1,24 @@
+name: Solhint
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Setup repo
+        uses: actions/checkout@v3
+
+      - name: Yarn Setup
+        uses: DerYeger/yarn-setup-action@v1.0.1
+
+      - name: Check Formatting
+        run: yarn solhint contracts/**.sol

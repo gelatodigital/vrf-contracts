@@ -11,43 +11,45 @@ const { deployments, w3f, ethers } = hre;
 
 describe("VRF Test Suite", function () {
   // Signers
-  let deployer: SignerWithAddress
-  let user: SignerWithAddress
+  let deployer: SignerWithAddress;
+  let user: SignerWithAddress;
 
-  // Web 3 Functions 
-  let vrf: Web3FunctionHardhat
+  // Web 3 Functions
+  let vrf: Web3FunctionHardhat;
   let userArgs: Web3FunctionUserArgs;
 
   // Factories
-  let inboxFactory: ContractFactory 
-  let mockConsumerFactory: ContractFactory 
+  let inboxFactory: ContractFactory;
+  let mockConsumerFactory: ContractFactory;
 
   // Contracts
-  let inbox: GelatoVRFInbox
-  let mockConsumer: MockVRFConsumer
+  let inbox: GelatoVRFInbox;
+  let mockConsumer: MockVRFConsumer;
 
   before(async function () {
     await deployments.fixture();
     [deployer, user] = await ethers.getSigners();
-    
+
     // Web 3 Functions
     vrf = w3f.get("vrf");
 
-    // Solidity contracts 
+    // Solidity contracts
     inboxFactory = await ethers.getContractFactory("GelatoVRFInbox");
     mockConsumerFactory = await ethers.getContractFactory("MockVRFConsumer");
   });
 
   this.beforeEach(async () => {
     inbox = (await inboxFactory.connect(deployer).deploy()) as GelatoVRFInbox;
-    mockConsumer = (await mockConsumerFactory.connect(deployer).deploy()) as MockVRFConsumer;
-    userArgs = {inbox: inbox.address}
-  })
+    mockConsumer = (await mockConsumerFactory
+      .connect(deployer)
+      .deploy()) as MockVRFConsumer;
+    userArgs = { inbox: inbox.address };
+  });
 
   it("Return canExec: true", async () => {
-    await inbox.connect(user).requestRandomness(1234, mockConsumer.address)
+    await inbox.connect(user).requestRandomness(1234, mockConsumer.address);
 
-    const exec = await vrf.run({userArgs})
+    const exec = await vrf.run({ userArgs });
     const res = exec.result as Web3FunctionResultV2;
 
     if (!res.canExec) assert.fail(res.message);
@@ -55,7 +57,7 @@ describe("VRF Test Suite", function () {
     const calldata = res.callData[0];
     await deployer.sendTransaction({ to: calldata.to, data: calldata.data });
 
-    console.log(await mockConsumer.latestRound())
-    console.log(await mockConsumer.beaconOf(mockConsumer.latestRound()))
+    console.log(await mockConsumer.latestRound());
+    console.log(await mockConsumer.beaconOf(mockConsumer.latestRound()));
   });
 });
