@@ -65,7 +65,7 @@ describe("VRF Test Suite", function () {
     userArgs = { inbox: inbox.address };
   });
 
-  it("Stores the latest round in the mock cosumer", async () => {
+  it("Stores the latest round in the mock consumer", async () => {
     const requestedRound = 1234
 
     await inbox.connect(user).requestRandomness(requestedRound, mockConsumer.address)
