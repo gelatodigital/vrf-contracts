@@ -1,5 +1,5 @@
 import hre from "hardhat";
-import { assert } from "chai";
+import { assert, expect } from "chai";
 import { before } from "mocha";
 import { Web3FunctionHardhat } from "@gelatonetwork/web3-functions-sdk/hardhat-plugin";
 import { ContractFactory } from "ethers";
@@ -46,8 +46,8 @@ describe("VRF Test Suite", function () {
     userArgs = { inbox: inbox.address };
   });
 
-  it("Return canExec: true", async () => {
-    await inbox.connect(user).requestRandomness(1234, mockConsumer.address);
+  it("Stores the latest round in the mock cosumer", async () => {
+    await inbox.connect(user).requestRandomness(1234, mockConsumer.address)
 
     const exec = await vrf.run({ userArgs });
     const res = exec.result as Web3FunctionResultV2;
@@ -57,7 +57,9 @@ describe("VRF Test Suite", function () {
     const calldata = res.callData[0];
     await deployer.sendTransaction({ to: calldata.to, data: calldata.data });
 
-    console.log(await mockConsumer.latestRound());
-    console.log(await mockConsumer.beaconOf(mockConsumer.latestRound()));
+    expect(await mockConsumer.latestRound()).to.equal(1234)
+    expect(await mockConsumer.beaconOf(mockConsumer.latestRound())).to.equal(123456789)
   });
+
+  it("Doesn't exectue if no event was emitted")
 });
