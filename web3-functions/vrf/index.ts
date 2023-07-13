@@ -98,7 +98,7 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
 
   console.log(logs);
 
-  const callbackAddr: string = "0x100Fe89E27ED155C8098264b8E57c57f6249C653";
+  const callbackAddr = "0x100Fe89E27ED155C8098264b8E57c57f6249C653";
   const callback = new Contract(callbackAddr, CALLBACK_ABI, provider);
 
   const options = {
