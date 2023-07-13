@@ -1,4 +1,4 @@
-name: Deno Linter
+name: ESLint
 
 on:
   push:
@@ -17,11 +17,8 @@ jobs:
       - name: Setup repo
         uses: actions/checkout@v3
 
-      - name: Setup Deno
-        # uses: denoland/setup-deno@v1
-        uses: denoland/setup-deno@9db7f66e8e16b5699a514448ce994936c63f0d54
-        with:
-          deno-version: v1.x
+      - name: Yarn Setup
+        uses: DerYeger/yarn-setup-action@v1.0.1
 
       - name: Run linter
-        run: deno lint
+        run: yarn eslint web3-functions/ test/
