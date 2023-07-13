@@ -87,5 +87,11 @@ describe("VRF Test Suite", function () {
     expect(latestRound).to.equal(requestedRound).and.to.equal(receivedRound)
   });
 
-  it("Doesn't exectue if no event was emitted")
+	  it("Doesn't execute if no event was emitted", async () => {                                                          
+    const exec = await vrf.run({userArgs})
+    const res = exec.result as Web3FunctionResultV2;
+
+    if (!res.canExec) assert.fail(res.message);
+    expect(res.calldata == [])
+  })
 });
