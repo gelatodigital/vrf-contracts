@@ -1,8 +1,0 @@
-{
-  "lint": {
-    "include": ["web3-functions/", "test/"],
-    "rules": {
-      "tags": ["recommended"]
-    }
-  }
-}
