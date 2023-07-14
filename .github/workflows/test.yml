@@ -1,34 +1,24 @@
-name: test
+name: Unit Tests
 
-on: workflow_dispatch
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
 
-env:
-  FOUNDRY_PROFILE: ci
+permissions:
+  contents: read
 
 jobs:
-  check:
-    strategy:
-      fail-fast: true
-
-    name: Foundry project
+  test:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v3
-        with:
-          submodules: recursive
+      - name: Setup repo
+        uses: actions/checkout@v3
 
-      - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@v1
-        with:
-          version: nightly
+      - name: Yarn Setup
+        uses: DerYeger/yarn-setup-action@v1.0.1
 
-      - name: Run Forge build
-        run: |
-          forge --version
-          forge build --sizes
-        id: build
-
-      - name: Run Forge tests
-        run: |
-          forge test -vvv
-        id: test
+      - name: Run tests
+        run: yarn test
