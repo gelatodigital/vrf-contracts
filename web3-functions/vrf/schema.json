@@ -4,6 +4,7 @@
   "memory": 128,
   "timeout": 30,
   "userArgs": {
-    "inbox": "string"
+    "inbox": "string",
+    "allowedSenders": "string[]"
   }
 }
