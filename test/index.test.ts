@@ -108,6 +108,6 @@ describe("VRF Test Suite", function () {
     const res = exec.result as Web3FunctionResultV2;
 
     if (!res.canExec) assert.fail(res.message);
-    expect(res.callData.length).to.equal(0);
+    expect(res.callData).to.have.lengthOf(0);
   });
 });
