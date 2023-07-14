@@ -72,7 +72,7 @@ describe("VRF Test Suite", function () {
     mockConsumer = (await mockConsumerFactory
       .connect(deployer)
       .deploy()) as MockVRFConsumer;
-    userArgs = { inbox: inbox.address };
+    userArgs = { inbox: inbox.address, allowedSenders: [] };
   });
 
   it("Stores the latest round in the mock consumer", async () => {
