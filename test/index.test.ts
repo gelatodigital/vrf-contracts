@@ -82,13 +82,14 @@ describe("VRF Test Suite", function () {
       .connect(user)
       .requestRandomness(requestedRound, mockConsumer.address);
 
+    (userArgs.allowedSenders as string[]).push(user.address);
+
     const exec = await vrf.run({ userArgs });
     const res = exec.result as Web3FunctionResultV2;
 
     if (!res.canExec) assert.fail(res.message);
 
-    const calldata = res.callData[0];
-    await deployer.sendTransaction({ to: calldata.to, data: calldata.data });
+    res.callData.forEach(async (callData) => await deployer.sendTransaction(callData))
 
     fetchBeacon(client, requestedRound);
     const { round: receivedRound, randomness } = await fetchBeacon(

@@ -17,7 +17,7 @@ import {
 
 // contract abis
 const INBOX_ABI = [
-  "event RequestedRandomness(uint256 round, address callback)",
+  "event RequestedRandomness(uint256 round, address callback, address sender)",
 ];
 const CALLBACK_ABI = [
   "function fullfillRandomness(uint256 round, uint256 randomness) external",
@@ -79,6 +79,7 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
 
   const provider = multiChainProvider.default();
 
+  const allowedSenders = userArgs.allowedSenders as string[];
   const inboxAddress = userArgs.inbox as string;
   const inbox = new Contract(inboxAddress, INBOX_ABI, provider);
 
@@ -88,7 +89,12 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
     ? parseInt(lastBlockStr)
     : currentBlock - MAX_DEPTH;
 
-  const topics = [inbox.interface.getEventTopic("RequestedRandomness")];
+  // const topics = [/*inbox.interface.getEventTopic("RequestedRandomness")*/];
+  // const topics = [inbox.interface.getEventTopic("RequestedRandomness"), null, ];
+  const topics = [ethers.utils.id("RequestedRandomness(uint256,address,address)"), allowedSenders];
+  // const topics = [ethers.utils.id("RequestedRandomness(uint256,address,address)")];
+
+  // const eventFilter = inbox.filters.RequestedRandomness(null, null, null);
 
   // Fetch recent logs in range of 100 blocks
   const logs: Log[] = [];
@@ -121,7 +127,8 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
   console.log(`Matched ${logs.length} new events`);
   for (const log of logs) {
     const event = inbox.interface.parseLog(log);
-    const [roundRequested, callbackAddress] = event.args;
+    const [roundRequested, callbackAddress, sender] = event.args;
+    console.log(sender);
     const callback = new Contract(callbackAddress, CALLBACK_ABI, provider);
     const { round: roundReceived, randomness } = await fetchDrandResponse(
       roundRequested || undefined
