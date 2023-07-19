@@ -14,10 +14,11 @@ import {
   HttpCachingChain,
   ChainOptions,
 } from "drand-client";
+import { hexZeroPad } from "ethers/lib/utils";
 
 // contract abis
 const INBOX_ABI = [
-  "event RequestedRandomness(uint256 round, address callback, address sender)",
+  "event RequestedRandomness(uint256 round, address callback, address indexed sender)",
 ];
 const CALLBACK_ABI = [
   "function fullfillRandomness(uint256 round, uint256 randomness) external",
@@ -89,12 +90,10 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
     ? parseInt(lastBlockStr)
     : currentBlock - MAX_DEPTH;
 
-  // const topics = [/*inbox.interface.getEventTopic("RequestedRandomness")*/];
-  // const topics = [inbox.interface.getEventTopic("RequestedRandomness"), null, ];
-  const topics = [ethers.utils.id("RequestedRandomness(uint256,address,address)"), allowedSenders];
-  // const topics = [ethers.utils.id("RequestedRandomness(uint256,address,address)")];
-
-  // const eventFilter = inbox.filters.RequestedRandomness(null, null, null);
+  const topics = [
+    ethers.utils.id("RequestedRandomness(uint256,address,address)"),
+    allowedSenders.map((e) => hexZeroPad(e, 32)),
+  ];
 
   // Fetch recent logs in range of 100 blocks
   const logs: Log[] = [];
