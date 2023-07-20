@@ -89,7 +89,9 @@ describe("VRF Test Suite", function () {
 
     if (!res.canExec) assert.fail(res.message);
 
-    res.callData.forEach(async (callData) => await deployer.sendTransaction(callData))
+    res.callData.forEach(
+      async (callData) => await deployer.sendTransaction(callData)
+    );
 
     fetchBeacon(client, requestedRound);
     const { round: receivedRound, randomness } = await fetchBeacon(
