@@ -144,6 +144,8 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
     });
   }
 
+  await storage.set("lastBlockNumber", `${currentBlock}`);
+
   return {
     canExec: true,
     callData,
