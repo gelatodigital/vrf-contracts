@@ -31,6 +31,7 @@ describe("VRF Test Suite", function () {
   // Signers
   let deployer: SignerWithAddress;
   let user: SignerWithAddress;
+  let dedicatedMsgSender: SignerWithAddress;
 
   // Web 3 Functions
   let vrf: Web3FunctionHardhat;
@@ -50,7 +51,7 @@ describe("VRF Test Suite", function () {
 
   before(async function () {
     await deployments.fixture();
-    [deployer, user] = await ethers.getSigners();
+    [deployer, user, dedicatedMsgSender] = await ethers.getSigners();
 
     // Web 3 Functions
     vrf = w3f.get("vrf");
@@ -71,7 +72,7 @@ describe("VRF Test Suite", function () {
     inbox = (await inboxFactory.connect(deployer).deploy()) as GelatoVRFInbox;
     mockConsumer = (await mockConsumerFactory
       .connect(deployer)
-      .deploy()) as MockVRFConsumer;
+      .deploy(dedicatedMsgSender.address)) as MockVRFConsumer;
     userArgs = { inbox: inbox.address, allowedSenders: [] };
   });
 
@@ -90,7 +91,7 @@ describe("VRF Test Suite", function () {
     if (!res.canExec) assert.fail(res.message);
 
     res.callData.forEach(
-      async (callData) => await deployer.sendTransaction(callData)
+      async (callData) => await dedicatedMsgSender.sendTransaction(callData)
     );
 
     fetchBeacon(client, requestedRound);
