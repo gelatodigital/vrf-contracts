@@ -71,7 +71,7 @@ describe("VRF Test Suite", function () {
     inbox = (await inboxFactory.connect(deployer).deploy()) as GelatoVRFInbox;
     mockConsumer = (await mockConsumerFactory
       .connect(deployer)
-      .deploy()) as MockVRFConsumer;
+      .deploy(inbox.address)) as MockVRFConsumer;
     userArgs = { inbox: inbox.address, allowedSenders: [] };
   });
 
