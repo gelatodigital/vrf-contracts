@@ -14,6 +14,7 @@ contract MockVRFConsumer is GelatoVRFConsumer {
     }
 
     function requestRandomness(uint64 round) external {
+	    inbox.requireFutureRound(round);
         inbox.requestRandomness(round, this);
     }
 
