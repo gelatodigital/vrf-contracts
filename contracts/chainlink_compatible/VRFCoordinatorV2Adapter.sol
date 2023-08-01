@@ -1,14 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.18;
 
-import {
-    VRFCoordinatorV2Interface
-} from "@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2Interface.sol";
+import {VRFCoordinatorV2Stub} from "./internal/VRFCoordinatorV2Stub.sol";
 import {
     VRFConsumerBaseV2
 } from "@chainlink/contracts/src/v0.8/VRFConsumerBaseV2.sol";
 
-contract VRFCoordinatorV2Adapter is VRFCoordinatorV2Interface {
+contract VRFCoordinatorV2Adapter is VRFCoordinatorV2Stub {
     event RandomnessRequest(
         address indexed sender,
         uint32 numWords,
@@ -18,7 +16,6 @@ contract VRFCoordinatorV2Adapter is VRFCoordinatorV2Interface {
     );
     uint private _requestIdCounter = 1;
 
-    bytes32 private immutable _dummyKeyHash = "Gelato VRF";
     // This is the genesis time of Drand's fastnet.
     uint public immutable genesisTime = 1677685200;
     // This is the period of Drand's fastnet.
@@ -31,89 +28,6 @@ contract VRFCoordinatorV2Adapter is VRFCoordinatorV2Interface {
 
     constructor(address operator) {
         _operator = operator;
-    }
-
-    /**
-     * @notice Simulate Chainlink configuration parameters
-     * @return minimumRequestConfirmations global min for request confirmations
-     * @return maxGasLimit global max for request gas limit
-     * @return provingKeyHashes list containing the dummy key hash
-     */
-    function getRequestConfig()
-        external
-        view
-        returns (
-            uint16 minimumRequestConfirmations,
-            uint32 maxGasLimit,
-            bytes32[] memory provingKeyHashes
-        )
-    {
-        minimumRequestConfirmations = 1;
-        maxGasLimit = type(uint32).max - 1;
-        provingKeyHashes = new bytes32[](1);
-        provingKeyHashes[0] = _dummyKeyHash;
-    }
-
-    function acceptSubscriptionOwnerTransfer(
-        uint64 /*subId*/
-    ) external override {
-        return;
-    }
-
-    function addConsumer(
-        uint64 /*subId*/,
-        address /*consumer*/
-    ) external override {
-        return;
-    }
-
-    function cancelSubscription(
-        uint64 /*subId*/,
-        address /*to*/
-    ) external override {
-        return;
-    }
-
-    function createSubscription() external override returns (uint64 subId) {
-        subId = 1;
-    }
-
-    function getSubscription(
-        uint64 /*subId*/
-    )
-        external
-        view
-        override
-        returns (
-            uint96 balance,
-            uint64 reqCount,
-            address owner,
-            address[] memory /*consumers*/
-        )
-    {
-        balance = type(uint96).max - 1;
-        reqCount = 1;
-        owner = msg.sender;
-    }
-
-    function pendingRequestExists(
-        uint64 /*subId*/
-    ) external view override returns (bool) {
-        return true;
-    }
-
-    function removeConsumer(
-        uint64 /*subId*/,
-        address /*consumer*/
-    ) external override {
-        return;
-    }
-
-    function requestSubscriptionOwnerTransfer(
-        uint64 /*subId*/,
-        address /*newOwner*/
-    ) external override {
-        return;
     }
 
     function requestRandomWords(

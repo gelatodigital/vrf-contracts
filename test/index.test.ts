@@ -56,7 +56,10 @@ describe("VRF Test Suite", function () {
 
     // Solidity contracts
     inboxFactory = await ethers.getContractFactory("GelatoVRFInbox");
-    mockConsumerFactory = await ethers.getContractFactory("MockVRFConsumer");
+
+    mockConsumerFactory = await ethers.getContractFactory(
+      "contracts/MockConsumer.sol:MockVRFConsumer"
+    );
 
     // Drand testing client
     chain = new HttpCachingChain(

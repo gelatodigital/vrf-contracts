@@ -4,10 +4,7 @@ import { before } from "mocha";
 import { Web3FunctionHardhat } from "@gelatonetwork/web3-functions-sdk/hardhat-plugin";
 import { ContractFactory } from "ethers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import {
-  VRFCoordinatorV2Adapter,
-  MockChainlinkVRFConsumer,
-} from "../typechain";
+import { VRFCoordinatorV2Adapter, MockVRFConsumer } from "../typechain";
 import { Web3FunctionUserArgs } from "@gelatonetwork/automate-sdk";
 import { Web3FunctionResultV2 } from "@gelatonetwork/web3-functions-sdk/*";
 const { deployments, w3f, ethers } = hre;
@@ -30,7 +27,7 @@ const DRAND_OPTIONS: ChainOptions = {
   chainVerificationParams: { chainHash: CHAIN_HASH, publicKey: PUBLIC_KEY },
 };
 
-describe("Adapter Test Suite", function () {
+describe("Chainlink Adapter Test Suite", function () {
   // Signers
   let deployer: SignerWithAddress;
   let user: SignerWithAddress;
@@ -45,7 +42,7 @@ describe("Adapter Test Suite", function () {
 
   // Contracts
   let adapter: VRFCoordinatorV2Adapter;
-  let mockConsumer: MockChainlinkVRFConsumer;
+  let mockConsumer: MockVRFConsumer;
 
   // Drand testing client
   let chain: HttpCachingChain;
@@ -61,7 +58,7 @@ describe("Adapter Test Suite", function () {
     // Solidity contracts
     adapterFactory = await ethers.getContractFactory("VRFCoordinatorV2Adapter");
     mockConsumerFactory = await ethers.getContractFactory(
-      "MockChainlinkVRFConsumer"
+      "contracts/chainlink_compatible/MockVRFConsumer.sol:MockVRFConsumer"
     );
 
     // Drand testing client
@@ -79,7 +76,7 @@ describe("Adapter Test Suite", function () {
       .deploy(operator)) as VRFCoordinatorV2Adapter;
     mockConsumer = (await mockConsumerFactory
       .connect(deployer)
-      .deploy(adapter.address)) as MockChainlinkVRFConsumer;
+      .deploy(adapter.address)) as MockVRFConsumer;
     userArgs = { adapter: adapter.address, allowedSenders: [] };
   });
 
@@ -89,7 +86,7 @@ describe("Adapter Test Suite", function () {
 
     (userArgs.allowedSenders as string[]).push(mockConsumer.address);
 
-    await mockConsumer.connect(user).doRequest(numWords);
+    await mockConsumer.connect(user).requestRandomWords(numWords);
     const requestId = await mockConsumer.requestId();
 
     const exec = await vrf.run({ userArgs });

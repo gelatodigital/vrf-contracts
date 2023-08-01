@@ -8,7 +8,7 @@ import {
     VRFConsumerBaseV2
 } from "@chainlink/contracts/src/v0.8/VRFConsumerBaseV2.sol";
 
-contract MockChainlinkVRFConsumer is VRFConsumerBaseV2 {
+contract MockVRFConsumer is VRFConsumerBaseV2 {
     VRFCoordinatorV2Interface private immutable _coordinator;
     uint256 public requestId;
     mapping(uint256 => uint256[]) public randomWordsOf;
@@ -17,7 +17,7 @@ contract MockChainlinkVRFConsumer is VRFConsumerBaseV2 {
         _coordinator = VRFCoordinatorV2Interface(coordinator);
     }
 
-    function doRequest(uint32 numWords) external {
+    function requestRandomWords(uint32 numWords) external {
         requestId = _coordinator.requestRandomWords("", 0, 3, 0, numWords);
     }
 
