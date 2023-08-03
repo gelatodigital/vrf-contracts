@@ -1,5 +1,4 @@
 import * as ethers from "ethers";
-import shuffle from "lodash/shuffle";
 import { Log } from "@ethersproject/providers";
 import { Contract } from "ethers";
 
@@ -8,15 +7,9 @@ import {
   Web3FunctionContext,
 } from "@gelatonetwork/web3-functions-sdk";
 
-import {
-  fetchBeacon,
-  HttpChainClient,
-  HttpCachingChain,
-  ChainOptions,
-  roundAt,
-  roundTime,
-} from "drand-client";
 import { hexZeroPad } from "ethers/lib/utils";
+
+import { getNextRandomness } from "../common";
 
 // contract abis
 const INBOX_ABI = [
@@ -30,51 +23,6 @@ const CALLBACK_ABI = [
 const MAX_DEPTH = 700;
 const MAX_RANGE = 100; // limit range of events to comply with rpc providers
 const MAX_REQUESTS = 100; // limit number of requests on every execution to avoid hitting timeout
-
-import { fastnet } from "../../src/drand_info";
-
-const DRAND_OPTIONS: ChainOptions = {
-  disableBeaconVerification: false,
-  noCache: false,
-  chainVerificationParams: {
-    chainHash: fastnet.hash,
-    publicKey: fastnet.public_key,
-  },
-};
-
-async function sleep(duration: number) {
-  await new Promise((resolve) => setTimeout(resolve, duration));
-}
-
-async function fetchDrandResponse(round?: number) {
-  // sequentially try different endpoints, in shuffled order for load-balancing
-  const urls = shuffle([
-    // Protocol labs endpoints
-    "https://api.drand.sh",
-    "https://api2.drand.sh",
-    "https://api3.drand.sh",
-    // Cloudflare
-    "https://drand.cloudflare.com",
-    // Storswift
-    // Does not serve the fastnet/quicknet Drand feeds as of 2023-07-18 (only the 30 seconds feed)
-    // Uncomment if this changes
-    // "https://api.drand.secureweb3.com:6875",
-  ]);
-
-  console.log("Fetching randomness");
-  const errors: Error[] = [];
-  for (const url of urls) {
-    console.log(`Trying ${url}...`);
-    const chain = new HttpCachingChain(`${url}/${fastnet.hash}`, DRAND_OPTIONS);
-    const client = new HttpChainClient(chain, DRAND_OPTIONS);
-    try {
-      return await fetchBeacon(client, round);
-    } catch (err) {
-      errors.push(err as Error);
-    }
-  }
-  throw errors.pop();
-}
 
 Web3Function.onRun(async (context: Web3FunctionContext) => {
   const { userArgs, storage, multiChainProvider } = context;
@@ -129,11 +77,7 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
     const event = inbox.interface.parseLog(log);
     const [callbackAddress] = event.args;
     const callback = new Contract(callbackAddress, CALLBACK_ABI, provider);
-    const now = Date.now();
-    const nextRound = roundAt(now, fastnet) + 1;
-    await sleep(roundTime(fastnet, nextRound) - now);
-    const { round, randomness } = await fetchDrandResponse(nextRound);
-    console.log(`Fulfilling from round ${round}`);
+    const randomness = await getNextRandomness();
     const encodedRandomness = ethers.BigNumber.from(`0x${randomness}`);
     callData.push({
       to: callbackAddress,
