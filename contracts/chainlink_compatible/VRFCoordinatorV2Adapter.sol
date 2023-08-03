@@ -11,18 +11,9 @@ contract VRFCoordinatorV2Adapter is VRFCoordinatorV2Stub {
         address indexed sender,
         uint32 numWords,
         uint256 requestId,
-        uint64 roundNumber,
         VRFConsumerBaseV2 consumer
     );
     uint private _requestIdCounter = 1;
-
-    // This is the genesis time of Drand's fastnet.
-    uint public immutable genesisTime = 1677685200;
-    // This is the period of Drand's fastnet.
-    uint public immutable period = 3 seconds;
-    // as an upper-bound for block time, we assume 12 seconds.
-    // This is true on Mainnet, albeit excessive on fast chains.
-    uint public immutable blockTime = 12 seconds;
 
     address private immutable _operator;
 
@@ -70,20 +61,8 @@ contract VRFCoordinatorV2Adapter is VRFCoordinatorV2Stub {
         VRFConsumerBaseV2 consumer
     ) private returns (uint256 requestId) {
         require(minimumRequestConfirmations != 0);
-        uint roundNumber = (block.timestamp +
-            minimumRequestConfirmations *
-            blockTime -
-            genesisTime) /
-            period +
-            1;
         requestId = _requestIdCounter++;
-        emit RandomnessRequest(
-            msg.sender,
-            numWords,
-            requestId,
-            uint64(roundNumber),
-            consumer
-        );
+        emit RandomnessRequest(msg.sender, numWords, requestId, consumer);
         return requestId;
     }
 

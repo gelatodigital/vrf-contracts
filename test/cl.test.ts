@@ -13,18 +13,17 @@ import {
   fetchBeacon,
   HttpCachingChain,
   HttpChainClient,
+  roundAt,
 } from "drand-client";
-
-// drand constants
-const CHAIN_HASH =
-  "dbd506d6ef76e5f386f41c651dcb808c5bcbd75471cc4eafa3f4df7ad4e4c493"; // fastnet hash
-const PUBLIC_KEY =
-  "a0b862a7527fee3a731bcb59280ab6abd62d5c0b6ea03dc4ddf6612fdfc9d01f01c31542541771903475eb1ec6615f8d0df0b8b6dce385811d6dcf8cbefb8759e5e616a3dfd054c928940766d9a5b9db91e3b697e5d70a975181e007f87fca5e";
+import { fastnet } from "../src/drand_info";
 
 const DRAND_OPTIONS: ChainOptions = {
   disableBeaconVerification: false,
   noCache: false,
-  chainVerificationParams: { chainHash: CHAIN_HASH, publicKey: PUBLIC_KEY },
+  chainVerificationParams: {
+    chainHash: fastnet.hash,
+    publicKey: fastnet.public_key,
+  },
 };
 
 describe("Chainlink Adapter Test Suite", function () {
@@ -63,7 +62,7 @@ describe("Chainlink Adapter Test Suite", function () {
 
     // Drand testing client
     chain = new HttpCachingChain(
-      `https://api.drand.sh/${CHAIN_HASH}`,
+      `https://api.drand.sh/${fastnet.hash}`,
       DRAND_OPTIONS
     );
     client = new HttpChainClient(chain, DRAND_OPTIONS);
@@ -81,7 +80,6 @@ describe("Chainlink Adapter Test Suite", function () {
   });
 
   it("Stores the latest round in the mock consumer", async () => {
-    const requestedRound = 0x06782e;
     const numWords = 3;
 
     (userArgs.allowedSenders as string[]).push(mockConsumer.address);
@@ -91,6 +89,7 @@ describe("Chainlink Adapter Test Suite", function () {
 
     const exec = await vrf.run({ userArgs });
     const res = exec.result as Web3FunctionResultV2;
+    const round = roundAt(Date.now(), fastnet);
 
     if (!res.canExec) assert.fail(res.message);
 
@@ -98,7 +97,7 @@ describe("Chainlink Adapter Test Suite", function () {
     const calldata = res.callData[0];
     await deployer.sendTransaction({ to: calldata.to, data: calldata.data });
 
-    const { randomness } = await fetchBeacon(client, requestedRound);
+    const { randomness } = await fetchBeacon(client, round);
 
     const abi = ethers.utils.defaultAbiCoder;
     const seed = ethers.utils.keccak256(
