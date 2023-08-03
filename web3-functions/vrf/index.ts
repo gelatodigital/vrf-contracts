@@ -13,15 +13,17 @@ import {
   HttpChainClient,
   HttpCachingChain,
   ChainOptions,
+  roundAt,
+  roundTime,
 } from "drand-client";
 import { hexZeroPad } from "ethers/lib/utils";
 
 // contract abis
 const INBOX_ABI = [
-  "event RequestedRandomness(uint256 round, address callback, address indexed sender)",
+  "event RequestedRandomness(address callback, address indexed sender)",
 ];
 const CALLBACK_ABI = [
-  "function fullfillRandomness(uint256 round, uint256 randomness) external",
+  "function fullfillRandomness(uint256 randomness) external",
 ];
 
 // w3f constants
@@ -39,6 +41,10 @@ const DRAND_OPTIONS: ChainOptions = {
     publicKey: fastnet.public_key,
   },
 };
+
+async function sleep(duration: number) {
+  await new Promise((resolve) => setTimeout(resolve, duration));
+}
 
 async function fetchDrandResponse(round?: number) {
   // sequentially try different endpoints, in shuffled order for load-balancing
@@ -86,7 +92,7 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
     : currentBlock - MAX_DEPTH;
 
   const topics = [
-    ethers.utils.id("RequestedRandomness(uint256,address,address)"),
+    ethers.utils.id("RequestedRandomness(address,address)"),
     allowedSenders.map((e) => hexZeroPad(e, 32)),
   ];
 
@@ -121,17 +127,17 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
   console.log(`Matched ${logs.length} new events`);
   for (const log of logs) {
     const event = inbox.interface.parseLog(log);
-    const [roundRequested, callbackAddress, sender] = event.args;
-    console.log(sender);
+    const [callbackAddress] = event.args;
     const callback = new Contract(callbackAddress, CALLBACK_ABI, provider);
-    const { round: roundReceived, randomness } = await fetchDrandResponse(
-      roundRequested || undefined
-    );
+    const now = Date.now();
+    const nextRound = roundAt(now, fastnet) + 1;
+    await sleep(roundTime(fastnet, nextRound) - now);
+    const { round, randomness } = await fetchDrandResponse(nextRound);
+    console.log(`Fulfilling from round ${round}`);
     const encodedRandomness = ethers.BigNumber.from(`0x${randomness}`);
     callData.push({
       to: callbackAddress,
       data: callback.interface.encodeFunctionData("fullfillRandomness", [
-        roundReceived,
         encodedRandomness,
       ]),
     });

@@ -13,6 +13,7 @@ import {
   fetchBeacon,
   HttpCachingChain,
   HttpChainClient,
+  roundAt,
 } from "drand-client";
 import { fastnet } from "../src/drand_info";
 
@@ -74,16 +75,13 @@ describe("VRF Test Suite", function () {
   });
 
   it("Stores the latest round in the mock consumer", async () => {
-    const requestedRound = 1234;
-
-    await inbox
-      .connect(user)
-      .requestRandomness(requestedRound, mockConsumer.address);
+    await inbox.connect(user).requestRandomness(mockConsumer.address);
 
     (userArgs.allowedSenders as string[]).push(user.address);
 
     const exec = await vrf.run({ userArgs });
     const res = exec.result as Web3FunctionResultV2;
+    const round = roundAt(Date.now(), fastnet);
 
     if (!res.canExec) assert.fail(res.message);
 
@@ -91,17 +89,11 @@ describe("VRF Test Suite", function () {
       async (callData) => await deployer.sendTransaction(callData)
     );
 
-    fetchBeacon(client, requestedRound);
-    const { round: receivedRound, randomness } = await fetchBeacon(
-      client,
-      requestedRound
-    );
+    const { randomness } = await fetchBeacon(client, round);
 
-    const latestRound = await mockConsumer.latestRound();
-    expect(await mockConsumer.beaconOf(latestRound)).to.equal(
+    expect(await mockConsumer.latestRandomness()).to.equal(
       ethers.BigNumber.from(`0x${randomness}`)
     );
-    expect(latestRound).to.equal(requestedRound).and.to.equal(receivedRound);
   });
 
   it("Doesn't execute if no event was emitted", async () => {
