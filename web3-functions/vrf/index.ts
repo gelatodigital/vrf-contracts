@@ -9,14 +9,14 @@ import {
 
 import { hexZeroPad } from "ethers/lib/utils";
 
-import { getNextRandomness } from "../common";
+import { getNextRandomness } from "../../src/drand_util";
 
 // contract abis
 const INBOX_ABI = [
-  "event RequestedRandomness(address callback, address indexed sender, bytes extraData)",
+  "event RequestedRandomness(address callback, address indexed sender, bytes data)",
 ];
 const CALLBACK_ABI = [
-  "function fullfillRandomness(uint256 randomness, bytes calldata extraData) external",
+  "function fullfillRandomness(uint256 randomness, bytes calldata data) external",
 ];
 
 // w3f constants
@@ -75,7 +75,7 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
   console.log(`Matched ${logs.length} new events`);
   for (const log of logs) {
     const event = inbox.interface.parseLog(log);
-    const [callbackAddress, , extraData] = event.args;
+    const [callbackAddress, , data] = event.args;
     const callback = new Contract(callbackAddress, CALLBACK_ABI, provider);
     const randomness = await getNextRandomness();
     const encodedRandomness = ethers.BigNumber.from(`0x${randomness}`);
@@ -83,7 +83,7 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
       to: callbackAddress,
       data: callback.interface.encodeFunctionData("fullfillRandomness", [
         encodedRandomness,
-        extraData,
+        data,
       ]),
     });
   }

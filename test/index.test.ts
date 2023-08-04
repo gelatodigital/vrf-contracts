@@ -77,11 +77,11 @@ describe("VRF Test Suite", function () {
     userArgs = { inbox: inbox.address, allowedSenders: [] };
   });
 
-  const extraData = []; // TODO; test extraData
+  const data = []; // TODO; test data
   it("Stores the latest round in the mock consumer", async () => {
     await inbox
       .connect(user)
-      .requestRandomness(mockConsumer.address, extraData);
+      .requestRandomness(mockConsumer.address, data);
 
     (userArgs.allowedSenders as string[]).push(user.address);
 

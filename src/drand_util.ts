@@ -9,7 +9,7 @@ import {
   roundTime,
 } from "drand-client";
 
-import { fastnet } from "../src/drand_info";
+import { fastnet } from "./drand_info";
 
 const DRAND_OPTIONS: ChainOptions = {
   disableBeaconVerification: false,

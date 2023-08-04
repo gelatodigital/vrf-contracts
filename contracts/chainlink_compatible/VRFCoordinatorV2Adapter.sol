@@ -11,9 +11,9 @@ contract VRFCoordinatorV2Adapter is VRFCoordinatorV2Stub, GelatoVRFConsumer {
     event RequestedRandomness(
         GelatoVRFConsumer callback,
         address indexed sender,
-        bytes extraData
+        bytes data
     );
-    uint private _requestIdCounter = 1;
+    uint256 private _requestIdCounter = 1;
 
     address private immutable _operator;
 
@@ -69,11 +69,11 @@ contract VRFCoordinatorV2Adapter is VRFCoordinatorV2Stub, GelatoVRFConsumer {
 
     function fullfillRandomness(
         uint256 randomness,
-        bytes calldata extraData
+        bytes calldata data
     ) external {
         require(msg.sender == _operator);
         (uint32 numWords, uint256 requestId, VRFConsumerBaseV2 consumer) = abi
-            .decode(extraData, (uint32, uint256, VRFConsumerBaseV2));
+            .decode(data, (uint32, uint256, VRFConsumerBaseV2));
         bytes32 seed = keccak256(abi.encode(randomness, requestId));
         uint[] memory words = new uint[](numWords);
         for (uint32 i = 0; i < numWords; i++) {
