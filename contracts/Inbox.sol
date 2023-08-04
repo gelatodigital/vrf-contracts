@@ -8,10 +8,7 @@ contract GelatoVRFInbox {
         bytes data
     );
 
-    function requestRandomness(
-        address callback,
-        bytes calldata data
-    ) external {
+    function requestRandomness(address callback, bytes calldata data) external {
         emit RequestedRandomness(callback, msg.sender, data);
     }
 }
