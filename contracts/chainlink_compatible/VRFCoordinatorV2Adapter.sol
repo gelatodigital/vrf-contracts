@@ -2,16 +2,16 @@
 pragma solidity 0.8.18;
 
 import {VRFCoordinatorV2Stub} from "./internal/VRFCoordinatorV2Stub.sol";
+import {GelatoVRFConsumer} from "contracts/Consumer.sol";
 import {
     VRFConsumerBaseV2
 } from "@chainlink/contracts/src/v0.8/VRFConsumerBaseV2.sol";
 
-contract VRFCoordinatorV2Adapter is VRFCoordinatorV2Stub {
-    event RandomnessRequest(
+contract VRFCoordinatorV2Adapter is VRFCoordinatorV2Stub, GelatoVRFConsumer {
+    event RequestedRandomness(
+        GelatoVRFConsumer callback,
         address indexed sender,
-        uint32 numWords,
-        uint256 requestId,
-        VRFConsumerBaseV2 consumer
+        bytes extraData
     );
     uint private _requestIdCounter = 1;
 
@@ -52,9 +52,6 @@ contract VRFCoordinatorV2Adapter is VRFCoordinatorV2Stub {
             );
     }
 
-    // solhint-disable not-rely-on-time
-    // In order to use Drand, users need to have pick a round number found in
-    // the future and thus need to rely on a notion of time.
     function _requestRandomWords(
         uint16 minimumRequestConfirmations,
         uint32 numWords,
@@ -62,17 +59,21 @@ contract VRFCoordinatorV2Adapter is VRFCoordinatorV2Stub {
     ) private returns (uint256 requestId) {
         require(minimumRequestConfirmations != 0);
         requestId = _requestIdCounter++;
-        emit RandomnessRequest(msg.sender, numWords, requestId, consumer);
+        emit RequestedRandomness(
+            this,
+            msg.sender,
+            abi.encode(numWords, requestId, consumer)
+        );
         return requestId;
     }
 
-    function fulfillRandomWords(
-        uint32 numWords,
-        uint256 requestId,
+    function fullfillRandomness(
         uint256 randomness,
-        VRFConsumerBaseV2 consumer
+        bytes calldata extraData
     ) external {
         require(msg.sender == _operator);
+        (uint32 numWords, uint256 requestId, VRFConsumerBaseV2 consumer) = abi
+            .decode(extraData, (uint32, uint256, VRFConsumerBaseV2));
         bytes32 seed = keccak256(abi.encode(randomness, requestId));
         uint[] memory words = new uint[](numWords);
         for (uint32 i = 0; i < numWords; i++) {

@@ -52,7 +52,7 @@ describe("Chainlink Adapter Test Suite", function () {
     [deployer, user] = await ethers.getSigners();
 
     // Web 3 Functions
-    vrf = w3f.get("adapter_fulfill_requests");
+    vrf = w3f.get("vrf");
 
     // Solidity contracts
     adapterFactory = await ethers.getContractFactory("VRFCoordinatorV2Adapter");
@@ -76,7 +76,7 @@ describe("Chainlink Adapter Test Suite", function () {
     mockConsumer = (await mockConsumerFactory
       .connect(deployer)
       .deploy(adapter.address)) as MockVRFConsumer;
-    userArgs = { adapter: adapter.address, allowedSenders: [] };
+    userArgs = { inbox: adapter.address, allowedSenders: [] };
   });
 
   it("Stores the latest round in the mock consumer", async () => {
