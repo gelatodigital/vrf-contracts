@@ -13,10 +13,10 @@ import { getNextRandomness } from "../common";
 
 // contract abis
 const INBOX_ABI = [
-  "event RequestedRandomness(address callback, address indexed sender)",
+  "event RequestedRandomness(address callback, address indexed sender, bytes extraData)",
 ];
 const CALLBACK_ABI = [
-  "function fullfillRandomness(uint256 randomness) external",
+  "function fullfillRandomness(uint256 randomness, bytes calldata extraData) external",
 ];
 
 // w3f constants
@@ -40,7 +40,7 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
     : currentBlock - MAX_DEPTH;
 
   const topics = [
-    ethers.utils.id("RequestedRandomness(address,address)"),
+    inbox.interface.getEventTopic("RequestedRandomness"),
     allowedSenders.map((e) => hexZeroPad(e, 32)),
   ];
 
@@ -75,7 +75,7 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
   console.log(`Matched ${logs.length} new events`);
   for (const log of logs) {
     const event = inbox.interface.parseLog(log);
-    const [callbackAddress] = event.args;
+    const [callbackAddress, , extraData] = event.args;
     const callback = new Contract(callbackAddress, CALLBACK_ABI, provider);
     const randomness = await getNextRandomness();
     const encodedRandomness = ethers.BigNumber.from(`0x${randomness}`);
@@ -83,6 +83,7 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
       to: callbackAddress,
       data: callback.interface.encodeFunctionData("fullfillRandomness", [
         encodedRandomness,
+        extraData,
       ]),
     });
   }
