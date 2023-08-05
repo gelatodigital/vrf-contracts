@@ -4,7 +4,7 @@ import { before } from "mocha";
 import { Web3FunctionHardhat } from "@gelatonetwork/web3-functions-sdk/hardhat-plugin";
 import { ContractFactory } from "ethers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { GelatoVRFInbox, MockVRFConsumer } from "../typechain";
+import { VRFCoordinatorV2Adapter, MockVRFConsumer } from "../typechain";
 import { Web3FunctionUserArgs } from "@gelatonetwork/automate-sdk";
 import { Web3FunctionResultV2 } from "@gelatonetwork/web3-functions-sdk/*";
 const { deployments, w3f, ethers } = hre;
@@ -26,22 +26,21 @@ const DRAND_OPTIONS: ChainOptions = {
   },
 };
 
-describe("VRF Test Suite", function () {
+describe("Chainlink Adapter Test Suite", function () {
   // Signers
   let deployer: SignerWithAddress;
   let user: SignerWithAddress;
-  let dedicatedMsgSender: SignerWithAddress;
 
   // Web 3 Functions
   let vrf: Web3FunctionHardhat;
   let userArgs: Web3FunctionUserArgs;
 
   // Factories
-  let inboxFactory: ContractFactory;
+  let adapterFactory: ContractFactory;
   let mockConsumerFactory: ContractFactory;
 
   // Contracts
-  let inbox: GelatoVRFInbox;
+  let adapter: VRFCoordinatorV2Adapter;
   let mockConsumer: MockVRFConsumer;
 
   // Drand testing client
@@ -50,16 +49,15 @@ describe("VRF Test Suite", function () {
 
   before(async function () {
     await deployments.fixture();
-    [deployer, user, dedicatedMsgSender] = await ethers.getSigners();
+    [deployer, user] = await ethers.getSigners();
 
     // Web 3 Functions
     vrf = w3f.get("vrf");
 
     // Solidity contracts
-    inboxFactory = await ethers.getContractFactory("GelatoVRFInbox");
-
+    adapterFactory = await ethers.getContractFactory("VRFCoordinatorV2Adapter");
     mockConsumerFactory = await ethers.getContractFactory(
-      "contracts/MockConsumer.sol:MockVRFConsumer"
+      "contracts/chainlink_compatible/MockVRFConsumer.sol:MockVRFConsumer"
     );
 
     // Drand testing client
@@ -71,18 +69,23 @@ describe("VRF Test Suite", function () {
   });
 
   this.beforeEach(async () => {
-    inbox = (await inboxFactory.connect(deployer).deploy()) as GelatoVRFInbox;
+    const operator = deployer.address;
+    adapter = (await adapterFactory
+      .connect(deployer)
+      .deploy(operator)) as VRFCoordinatorV2Adapter;
     mockConsumer = (await mockConsumerFactory
       .connect(deployer)
-      .deploy(dedicatedMsgSender.address)) as MockVRFConsumer;
-    userArgs = { inbox: inbox.address, allowedSenders: [] };
+      .deploy(adapter.address)) as MockVRFConsumer;
+    userArgs = { inbox: adapter.address, allowedSenders: [] };
   });
 
-  const data = []; // TODO; test data
   it("Stores the latest round in the mock consumer", async () => {
-    await inbox.connect(user).requestRandomness(mockConsumer.address, data);
+    const numWords = 3;
 
-    (userArgs.allowedSenders as string[]).push(user.address);
+    (userArgs.allowedSenders as string[]).push(mockConsumer.address);
+
+    await mockConsumer.connect(user).requestRandomWords(numWords);
+    const requestId = await mockConsumer.requestId();
 
     const exec = await vrf.run({ userArgs });
     const res = exec.result as Web3FunctionResultV2;
@@ -90,15 +93,23 @@ describe("VRF Test Suite", function () {
 
     if (!res.canExec) assert.fail(res.message);
 
-    res.callData.forEach(
-      async (callData) => await dedicatedMsgSender.sendTransaction(callData)
-    );
+    expect(res.callData).to.have.lengthOf(1);
+    const calldata = res.callData[0];
+    await deployer.sendTransaction({ to: calldata.to, data: calldata.data });
 
     const { randomness } = await fetchBeacon(client, round);
 
-    expect(await mockConsumer.latestRandomness()).to.equal(
-      ethers.BigNumber.from(`0x${randomness}`)
+    const abi = ethers.utils.defaultAbiCoder;
+    const seed = ethers.utils.keccak256(
+      abi.encode(["uint256", "uint32"], [`0x${randomness}`, requestId])
     );
+    for (let i = 0; i < numWords; i++) {
+      const expected = ethers.utils.keccak256(
+        abi.encode(["bytes32", "uint32"], [seed, i])
+      );
+      const actual = await mockConsumer.randomWordsOf(requestId, i);
+      expect(actual._hex).to.equal(expected);
+    }
   });
 
   it("Doesn't execute if no event was emitted", async () => {

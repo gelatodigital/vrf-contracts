@@ -61,6 +61,7 @@
     "*.*{ts,js}": "eslint -c .eslintrc.json"
   },
   "dependencies": {
+    "@chainlink/contracts": "^0.6.1",
     "@gelatonetwork/automate-sdk": "^2.7.0-beta",
     "@gelatonetwork/web3-functions-sdk": "^2.0.3",
     "@openzeppelin/contracts": "4.9.2",

@@ -9,7 +9,7 @@ contract MockVRFConsumer {
         dedicatedMsgSender = _dedicatedMsgSender;
     }
 
-    function fullfillRandomness(uint256 _randomness) external {
-        latestRandomness = _randomness;
+    function fullfillRandomness(uint256 randomness, bytes calldata) external {
+        latestRandomness = randomness;
     }
 }
