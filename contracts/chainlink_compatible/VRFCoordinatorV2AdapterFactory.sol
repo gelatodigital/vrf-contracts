@@ -11,6 +11,5 @@ contract VRFCoordinatorV2AdapterFactory {
     ) external returns (VRFCoordinatorV2Adapter adapter) {
         adapter = new VRFCoordinatorV2Adapter(operator);
         emit AdapterCreated(msg.sender, address(adapter));
-        return adapter;
     }
 }
