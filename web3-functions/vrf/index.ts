@@ -13,15 +13,17 @@ import {
   HttpChainClient,
   HttpCachingChain,
   ChainOptions,
+  roundAt,
+  roundTime,
 } from "drand-client";
 import { hexZeroPad } from "ethers/lib/utils";
 
 // contract abis
 const INBOX_ABI = [
-  "event RequestedRandomness(uint256 round, address callback, address indexed sender)",
+  "event RequestedRandomness(address callback, address indexed sender)",
 ];
 const CALLBACK_ABI = [
-  "function fullfillRandomness(uint256 round, uint256 randomness) external",
+  "function fullfillRandomness(uint256 randomness) external",
 ];
 
 // w3f constants
@@ -29,20 +31,20 @@ const MAX_DEPTH = 700;
 const MAX_RANGE = 100; // limit range of events to comply with rpc providers
 const MAX_REQUESTS = 100; // limit number of requests on every execution to avoid hitting timeout
 
-// drand constants
-const FASTNET_CHAIN_HASH =
-  "dbd506d6ef76e5f386f41c651dcb808c5bcbd75471cc4eafa3f4df7ad4e4c493";
-const PUBLIC_KEY =
-  "a0b862a7527fee3a731bcb59280ab6abd62d5c0b6ea03dc4ddf6612fdfc9d01f01c31542541771903475eb1ec6615f8d0df0b8b6dce385811d6dcf8cbefb8759e5e616a3dfd054c928940766d9a5b9db91e3b697e5d70a975181e007f87fca5e";
+import { fastnet } from "../../src/drand_info";
 
 const DRAND_OPTIONS: ChainOptions = {
   disableBeaconVerification: false,
   noCache: false,
   chainVerificationParams: {
-    chainHash: FASTNET_CHAIN_HASH,
-    publicKey: PUBLIC_KEY,
+    chainHash: fastnet.hash,
+    publicKey: fastnet.public_key,
   },
 };
+
+async function sleep(duration: number) {
+  await new Promise((resolve) => setTimeout(resolve, duration));
+}
 
 async function fetchDrandResponse(round?: number) {
   // sequentially try different endpoints, in shuffled order for load-balancing
@@ -63,10 +65,7 @@ async function fetchDrandResponse(round?: number) {
   const errors: Error[] = [];
   for (const url of urls) {
     console.log(`Trying ${url}...`);
-    const chain = new HttpCachingChain(
-      `${url}/${FASTNET_CHAIN_HASH}`,
-      DRAND_OPTIONS
-    );
+    const chain = new HttpCachingChain(`${url}/${fastnet.hash}`, DRAND_OPTIONS);
     const client = new HttpChainClient(chain, DRAND_OPTIONS);
     try {
       return await fetchBeacon(client, round);
@@ -93,7 +92,7 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
     : currentBlock - MAX_DEPTH;
 
   const topics = [
-    ethers.utils.id("RequestedRandomness(uint256,address,address)"),
+    ethers.utils.id("RequestedRandomness(address,address)"),
     allowedSenders.map((e) => hexZeroPad(e, 32)),
   ];
 
@@ -128,21 +127,23 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
   console.log(`Matched ${logs.length} new events`);
   for (const log of logs) {
     const event = inbox.interface.parseLog(log);
-    const [roundRequested, callbackAddress, sender] = event.args;
-    console.log(sender);
+    const [callbackAddress] = event.args;
     const callback = new Contract(callbackAddress, CALLBACK_ABI, provider);
-    const { round: roundReceived, randomness } = await fetchDrandResponse(
-      roundRequested || undefined
-    );
+    const now = Date.now();
+    const nextRound = roundAt(now, fastnet) + 1;
+    await sleep(roundTime(fastnet, nextRound) - now);
+    const { round, randomness } = await fetchDrandResponse(nextRound);
+    console.log(`Fulfilling from round ${round}`);
     const encodedRandomness = ethers.BigNumber.from(`0x${randomness}`);
     callData.push({
       to: callbackAddress,
       data: callback.interface.encodeFunctionData("fullfillRandomness", [
-        roundReceived,
         encodedRandomness,
       ]),
     });
   }
+
+  await storage.set("lastBlockNumber", `${currentBlock}`);
 
   return {
     canExec: true,

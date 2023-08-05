@@ -8,6 +8,7 @@ import "@nomiclabs/hardhat-waffle";
 import "hardhat-deploy";
 import "@matterlabs/hardhat-zksync-solc";
 import "@matterlabs/hardhat-zksync-verify";
+import { getSingletonFactoryInfo } from "@safe-global/safe-singleton-factory";
 
 // ================================= TASKS =========================================
 
@@ -17,6 +18,7 @@ dotenv.config({ path: __dirname + "/.env" });
 
 // Libraries
 import assert from "assert";
+import { BigNumber } from "@ethersproject/bignumber";
 
 // Process Env Variables
 const ALCHEMY_ID = process.env.ALCHEMY_ID;
@@ -24,6 +26,27 @@ assert.ok(ALCHEMY_ID, "no Alchemy ID in process.env");
 
 const PRIVATE_KEY = process.env.PRIVATE_KEY;
 const ETHERSCAN_KEY = process.env.ETHERSCAN_KEY;
+
+// Deterministic deployment using Safe's system
+const deterministicDeployment = (
+  network: string
+): DeterministicDeploymentInfo => {
+  const info = getSingletonFactoryInfo(parseInt(network));
+  if (!info) {
+    throw new Error(`
+        Safe factory not found for network ${network}. You can request a new deployment at https://github.com/safe-global/safe-singleton-factory.
+        For more information, see https://github.com/safe-global/safe-contracts#replay-protection-eip-155
+      `);
+  }
+  return {
+    factory: info.address,
+    deployer: info.signerAddress,
+    funding: BigNumber.from(info.gasLimit)
+      .mul(BigNumber.from(info.gasPrice))
+      .toString(),
+    signedTx: info.transaction,
+  };
+};
 
 // ================================= CONFIG =========================================
 const config: HardhatUserConfig = {
@@ -127,6 +150,8 @@ const config: HardhatUserConfig = {
       accounts: PRIVATE_KEY ? [PRIVATE_KEY] : [],
     },
   },
+
+  deterministicDeployment,
 
   verify: {
     etherscan: {

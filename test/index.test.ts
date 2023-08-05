@@ -13,18 +13,17 @@ import {
   fetchBeacon,
   HttpCachingChain,
   HttpChainClient,
+  roundAt,
 } from "drand-client";
-
-// drand constants
-const CHAIN_HASH =
-  "dbd506d6ef76e5f386f41c651dcb808c5bcbd75471cc4eafa3f4df7ad4e4c493"; // fastnet hash
-const PUBLIC_KEY =
-  "a0b862a7527fee3a731bcb59280ab6abd62d5c0b6ea03dc4ddf6612fdfc9d01f01c31542541771903475eb1ec6615f8d0df0b8b6dce385811d6dcf8cbefb8759e5e616a3dfd054c928940766d9a5b9db91e3b697e5d70a975181e007f87fca5e";
+import { fastnet } from "../src/drand_info";
 
 const DRAND_OPTIONS: ChainOptions = {
   disableBeaconVerification: false,
   noCache: false,
-  chainVerificationParams: { chainHash: CHAIN_HASH, publicKey: PUBLIC_KEY },
+  chainVerificationParams: {
+    chainHash: fastnet.hash,
+    publicKey: fastnet.public_key,
+  },
 };
 
 describe("VRF Test Suite", function () {
@@ -62,7 +61,7 @@ describe("VRF Test Suite", function () {
 
     // Drand testing client
     chain = new HttpCachingChain(
-      `https://api.drand.sh/${CHAIN_HASH}`,
+      `https://api.drand.sh/${fastnet.hash}`,
       DRAND_OPTIONS
     );
     client = new HttpChainClient(chain, DRAND_OPTIONS);
@@ -77,16 +76,13 @@ describe("VRF Test Suite", function () {
   });
 
   it("Stores the latest round in the mock consumer", async () => {
-    const requestedRound = 1234;
-
-    await inbox
-      .connect(user)
-      .requestRandomness(requestedRound, mockConsumer.address);
+    await inbox.connect(user).requestRandomness(mockConsumer.address);
 
     (userArgs.allowedSenders as string[]).push(user.address);
 
     const exec = await vrf.run({ userArgs });
     const res = exec.result as Web3FunctionResultV2;
+    const round = roundAt(Date.now(), fastnet);
 
     if (!res.canExec) assert.fail(res.message);
 
@@ -94,17 +90,11 @@ describe("VRF Test Suite", function () {
       async (callData) => await dedicatedMsgSender.sendTransaction(callData)
     );
 
-    fetchBeacon(client, requestedRound);
-    const { round: receivedRound, randomness } = await fetchBeacon(
-      client,
-      requestedRound
-    );
+    const { randomness } = await fetchBeacon(client, round);
 
-    const latestRound = await mockConsumer.latestRound();
-    expect(await mockConsumer.beaconOf(latestRound)).to.equal(
+    expect(await mockConsumer.latestRandomness()).to.equal(
       ethers.BigNumber.from(`0x${randomness}`)
     );
-    expect(latestRound).to.equal(requestedRound).and.to.equal(receivedRound);
   });
 
   it("Doesn't execute if no event was emitted", async () => {
