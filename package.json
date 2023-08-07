@@ -1,8 +1,8 @@
 {
   "name": "gelato-web3-functions-hardhat-template",
   "version": "1.0.0",
-  "description": "Gelato Web3 Functions Hardhat Template",
-  "repository": "https://github.com/gelatodigital/web3-functions-hardhat-template",
+  "description": "Gelato VRF",
+  "repository": "https://github.com/gelatodigital/vrf-contracts",
   "private": false,
   "scripts": {
     "build": "yarn clean && yarn install && yarn compile && npx tsc",
@@ -16,8 +16,6 @@
     "lint:sol": "solhint contracts/**/*.sol",
     "test": "npx hardhat test",
     "verify": "npx hardhat etherscan-verify",
-    "create-task:adboard": "npx hardhat run ./scripts/create-task-adboard.ts",
-    "create-task:oracle": "npx hardhat run ./scripts/create-task-oracle.ts"
   },
   "license": "ISC",
   "devDependencies": {
