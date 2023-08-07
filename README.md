@@ -25,7 +25,6 @@ Similar to any other W3F, this VRF also leverages some special parameters
 
 ### User arguments
 - `allowedSenders: string[]` is the array of addresses that are allowed to spend the user's balance when requesting a random number. Since the access to the VRF is not gated on-chain anyone is able to call it. This allows both EOAs and SC to request on-chain randomness and trigger callbacks.
-#### Vanilla specific parameters
 - `inbox: string`: This parameter varies depending on the use-case picked by the user:
     - For the Gelato VRF this is the address of the inbox that the VRF will listen to. This parameter **SHOULD NOT** be customized by the user (and it is infact added by the frontend once the network is chosen).
     - For the CL compatible VRF this is the address of the user-deployed adapter. This parameter is returned by the factory once it deploys an adapter.
