@@ -22,4 +22,3 @@ contract VRFCoordinatorV2AdapterFactory {
         emit AdapterCreated(msg.sender, address(adapter));
     }
 }
-
