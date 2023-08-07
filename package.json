@@ -15,7 +15,7 @@
     "lint:ts": "eslint -c .eslintrc.json --ext \"**/*.ts\" \"**/*.test.ts\"",
     "lint:sol": "solhint contracts/**/*.sol",
     "test": "npx hardhat test",
-    "verify": "npx hardhat etherscan-verify",
+    "verify": "npx hardhat etherscan-verify"
   },
   "license": "ISC",
   "devDependencies": {
