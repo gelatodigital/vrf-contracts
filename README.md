@@ -11,7 +11,7 @@ In the repositories the smart contracts are designed to cover two main use-cases
 1. Gelato VRF is offered through the `Inbox.sol` contracts that collects requests that are then dispatched by the W3F.
 2. Handle CL VRF compliant requests through the `VRFCoordinatorV2Adapter.sol` contract that are treated like a normal request with additional data that is then used on the smart contract level.
 
-Overall the W3F behaves exactly the same for the two use-cases. The only difference is in the implementation of the CL adapter.
+The same W3F script powers both use cases. Only the smart contracts are different.
 
 Some small differences lie in the setup required to make the VRF work depending on which use-case is being targeted.
 
