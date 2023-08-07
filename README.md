@@ -9,19 +9,17 @@ In this repository you can find a Gelato Web3 Function that acts as the oracle f
 In the repositories the smart contracts are designed to cover two main use-cases:
 
 1. Gelato VRF is offered through the `Inbox.sol` contracts that collects requests that are then dispatched by the W3F.
-2. Handle CL VRF compliant requests through the `VRFCoordinatorV2Adapter.sol` contract that are treated like a normal request with additional data that is then used on the smart contract level.
+2. Handle Chainlink VRF compliant requests through the `VRFCoordinatorV2Adapter.sol` contract.
 
 The same W3F script powers both use cases. Only the smart contracts are different.
 
-Some small differences lie in the setup required to make the VRF work depending on which use-case is being targeted.
+Some small difference lie in the setup required to make the W3F work depending on which use-case is being targeted.
 
-1. For the Gelato VRF to work, the `Inbox.sol` contract needs to be deployed on the targeted chain. Ideally once someone from Gelato deploys the inbox the chain will be fully supported (assuming full EVM-compatibility).
+1. For the Gelato VRF to work, the `Inbox.sol` contract needs to be deployed on the targeted chain. Ideally once the team deploys the inbox the chain will be fully supported (assuming full EVM-compatibility).
 
-2. For the Chainlink Compatible VRF the `VRFCoordinatorV2Adapter.sol` contract has to be deployed. Each user has to deploy its own instance of the adapter. This can be easily achieved through the `VRFCoordinatorV2AdapterFactory.sol` factory contract.
+2. For the Chainlink Compatible VRF the `VRFCoordinatorV2Adapter.sol` contract has to be deployed. Each user has to deploy its own instance of the adapter. This can be easily achieved through the `VRFCoordinatorV2AdapterFactory.sol` factory contract, which also needs to be deployed on every supported chain.
 
 ## Web3 Function Details
-
-Similar to any other W3F, this VRF also leverages some special parameters
 
 ### User arguments
 - `allowedSenders: string[]` is the array of addresses that are allowed to spend the user's balance when requesting a random number. Since the access to the VRF is not gated on-chain anyone is able to call it. This allows both EOAs and SC to request on-chain randomness and trigger callbacks.
@@ -50,3 +48,7 @@ cp .env.example .env
 ```
 
 3. Complete your `.env` file with your private settings
+
+## Deterministic deployment
+
+Singleton contracts can be deployed using `npx hardhat deploy`.
