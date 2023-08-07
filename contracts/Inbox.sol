@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.18;
 
-import "./Consumer.sol";
+import {GelatoVRFConsumer} from "./Consumer.sol";
 
 contract GelatoVRFInbox {
     event RequestedRandomness(
