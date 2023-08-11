@@ -15,7 +15,10 @@
     "lint:ts": "eslint -c .eslintrc.json --ext \"**/*.ts\" \"**/*.test.ts\"",
     "lint:sol": "solhint contracts/**/*.sol",
     "test": "npx hardhat test",
-    "verify": "npx hardhat etherscan-verify"
+    "verify": "npx hardhat etherscan-verify",
+    "coverage:sol": "npx hardhat coverage",
+    "coverage:w3f": "nyc npx hardhat test",
+    "coverage": "nyc yarn coverage:sol"
   },
   "license": "ISC",
   "devDependencies": {
