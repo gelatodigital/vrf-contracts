@@ -9,6 +9,7 @@ import "hardhat-deploy";
 import "@matterlabs/hardhat-zksync-solc";
 import "@matterlabs/hardhat-zksync-verify";
 import { getSingletonFactoryInfo } from "@safe-global/safe-singleton-factory";
+import 'solidity-coverage' 
 
 // ================================= TASKS =========================================
 
