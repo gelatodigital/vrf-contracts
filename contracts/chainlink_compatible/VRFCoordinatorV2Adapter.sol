@@ -13,12 +13,16 @@ contract VRFCoordinatorV2Adapter is VRFCoordinatorV2Stub, GelatoVRFConsumer {
         address indexed sender,
         bytes data
     );
+
+    error ZeroConfirmationsRequested();
+    error SenderNotOperator();
+
     uint256 private _requestIdCounter = 1;
 
-    address private immutable _operator;
+    address public immutable operator;
 
-    constructor(address operator) {
-        _operator = operator;
+    constructor(address _operator) {
+        operator = _operator;
     }
 
     function requestRandomWords(
@@ -57,7 +61,9 @@ contract VRFCoordinatorV2Adapter is VRFCoordinatorV2Stub, GelatoVRFConsumer {
         uint32 numWords,
         VRFConsumerBaseV2 consumer
     ) private returns (uint256 requestId) {
-        require(minimumRequestConfirmations != 0);
+        if (minimumRequestConfirmations == 0) {
+            revert ZeroConfirmationsRequested();
+        }
         requestId = _requestIdCounter++;
         emit RequestedRandomness(
             this,
@@ -71,7 +77,8 @@ contract VRFCoordinatorV2Adapter is VRFCoordinatorV2Stub, GelatoVRFConsumer {
         uint256 randomness,
         bytes calldata data
     ) external {
-        require(msg.sender == _operator);
+        if (msg.sender != operator) revert SenderNotOperator();
+
         (uint32 numWords, uint256 requestId, VRFConsumerBaseV2 consumer) = abi
             .decode(data, (uint32, uint256, VRFConsumerBaseV2));
         bytes32 seed = keccak256(abi.encode(randomness, requestId));

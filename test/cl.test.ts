@@ -1,5 +1,5 @@
 import hre from "hardhat";
-import { assert, expect } from "chai";
+import { assert, expect, should } from "chai";
 import { Web3FunctionHardhat } from "@gelatonetwork/web3-functions-sdk/hardhat-plugin";
 import { ContractFactory } from "ethers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
@@ -80,10 +80,11 @@ describe("Chainlink Adapter Test Suite", function () {
 
   it("Stores the latest round in the mock consumer", async () => {
     const numWords = 3;
+    const numberOfConfirmations = 3;
 
     (userArgs.allowedSenders as string[]).push(mockConsumer.address);
 
-    await mockConsumer.connect(user).requestRandomWords(numWords);
+    await mockConsumer.connect(user).requestRandomWords(numWords, numberOfConfirmations);
     const requestId = await mockConsumer.requestId();
 
     const exec = await vrf.run({ userArgs });
@@ -107,9 +108,99 @@ describe("Chainlink Adapter Test Suite", function () {
         abi.encode(["bytes32", "uint32"], [seed, i])
       );
       const actual = await mockConsumer.randomWordsOf(requestId, i);
-      expect(actual._hex).to.equal(expected);
+      expect(actual).to.equal(expected);
     }
   });
+
+  it("Works when consumer and and (allowed) sender are not the same", async () => {
+    const anotherConsumer = (await mockConsumerFactory
+      .connect(deployer)
+      .deploy(adapter.address)) as MockVRFConsumer;
+
+    const numWords = 3;
+
+    (userArgs.allowedSenders as string[]).push(mockConsumer.address);
+
+    await mockConsumer
+      .connect(user)
+      .requestRandomWordsForConsumer(numWords, anotherConsumer.address);
+    const requestId = await mockConsumer.requestId();
+
+    const exec = await vrf.run({ userArgs });
+    const res = exec.result as Web3FunctionResultV2;
+    const round = roundAt(Date.now(), fastnet);
+
+    if (!res.canExec) assert.fail(res.message);
+
+    expect(res.callData).to.have.lengthOf(1);
+    const calldata = res.callData[0];
+    await deployer.sendTransaction({ to: calldata.to, data: calldata.data });
+
+    const { randomness } = await fetchBeacon(client, round);
+
+    const abi = ethers.utils.defaultAbiCoder;
+    const seed = ethers.utils.keccak256(
+      abi.encode(["uint256", "uint32"], [`0x${randomness}`, requestId])
+    );
+    for (let i = 0; i < numWords; i++) {
+      const expected = ethers.utils.keccak256(
+        abi.encode(["bytes32", "uint32"], [seed, i])
+      );
+      const actual = await anotherConsumer.randomWordsOf(requestId, i);
+      // mockConsumer received the request
+      expect(await mockConsumer.requestId()).to.eq(1);
+      // anotherConsumer didn't receive any request
+      expect(await anotherConsumer.requestId()).to.eq(0);
+      // anotherConsumer got his randomness fullfilled
+      expect(actual).to.equal(expected);
+    }
+  });
+
+  it("Reverts when fullfiller is not dedicated msg.sender", async function() {
+    const numWords = 3;
+    const numberOfConfirmations = 3;
+
+    (userArgs.allowedSenders as string[]).push(mockConsumer.address);
+
+    await mockConsumer.connect(user).requestRandomWords(numWords, numberOfConfirmations);
+    const requestId = await mockConsumer.requestId();
+
+    const exec = await vrf.run({ userArgs });
+    const res = exec.result as Web3FunctionResultV2;
+    const round = roundAt(Date.now(), fastnet);
+
+    if (!res.canExec) assert.fail(res.message);
+
+    expect(res.callData).to.have.lengthOf(1);
+    const calldata = res.callData[0];
+    const tx = await user.sendTransaction({ to: calldata.to, data: calldata.data })
+    const receipt = await tx.wait()
+    expect(receipt).throw()
+  
+
+    const { randomness } = await fetchBeacon(client, round);
+
+    const abi = ethers.utils.defaultAbiCoder;
+    const seed = ethers.utils.keccak256(
+      abi.encode(["uint256", "uint32"], [`0x${randomness}`, requestId])
+    );
+    for (let i = 0; i < numWords; i++) {
+      const expected = ethers.utils.keccak256(
+        abi.encode(["bytes32", "uint32"], [seed, i])
+      );
+      const actual = await mockConsumer.randomWordsOf(requestId, i);
+      expect(actual).to.equal(expected);
+    }  
+  })
+
+  it ("Reverts when 0 confirmations are requested", async function () {
+    const numWords = 3;
+    const invalidNumberOfConfirmations = 0;
+
+    (userArgs.allowedSenders as string[]).push(mockConsumer.address);
+
+    await expect(mockConsumer.connect(user).requestRandomWords(numWords, invalidNumberOfConfirmations)).reverted
+  })
 
   it("Doesn't execute if no event was emitted", async () => {
     const exec = await vrf.run({ userArgs });
