@@ -19,6 +19,7 @@ contract MockVRFConsumer is GelatoVRFConsumer {
     }
 
     function fullfillRandomness(uint256 randomness, bytes calldata) external {
+        require(msg.sender == dedicatedMsgSender, "only inbox")
         latestRandomness = randomness;
     }
 }
