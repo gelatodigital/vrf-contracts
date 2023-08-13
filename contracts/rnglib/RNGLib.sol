@@ -1,20 +1,21 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.18;
 
-/** RNGLib rovides a simple interface to manage a contract-internal PRNG and
- * pull random numbers from it.
- */
+/// @title RNGLib
+/// @dev Library providing a simple interface to manage a contract-internal PRNG and pull random numbers from it.
 library RNGLib {
+    /// @dev Structure to hold the state of the random number generator (RNG).
     struct RNGState {
         bytes32 seed;
         uint256 counter;
     }
 
-    /** seed a new RNG based on a value from a public randomness beacon.
-     * @notice in order to ensure domain separation, at least one of
-     * randomness, chain id, current contract address, or the domain string
-     * must be different between two different RNGs.
-     */
+    /// @notice Seed a new random number generator (RNG) based on a value from a public randomness beacon.
+    /// @dev To ensure domain separation, at least one of randomness, chain id, current contract address,
+    /// or the domain string must be different between two different RNGs.
+    /// @param randomness The value from a public randomness beacon.
+    /// @param domain A string that contributes to domain separation.
+    /// @return st The initialized RNGState struct.
     function makeRNG(
         uint256 randomness,
         string memory domain
@@ -25,8 +26,9 @@ library RNGLib {
         st.counter = 0;
     }
 
-    /** return a distinct, uniformly ditributed number, and advance the RNG.
-     */
+    /// @notice Generate a distinct, uniformly distributed number, and advance the RNG.
+    /// @param st The RNGState struct representing the state of the RNG.
+    /// @return random A distinct, uniformly distributed number.
     function randomUint256(
         RNGState memory st
     ) internal pure returns (uint256 random) {
@@ -37,9 +39,11 @@ library RNGLib {
         }
     }
 
-    /** return a distinct, uniformly ditributed number less than max, and advance the RNG.
-    @notice max is limited to uint224 to ensure modulo bias probability is negligible.
-     */
+    /// @notice Generate a distinct, uniformly distributed number less than max, and advance the RNG.
+    /// @dev Max is limited to uint224 to ensure modulo bias probability is negligible.
+    /// @param st The RNGState struct representing the state of the RNG.
+    /// @param max The upper limit for the generated random number (exclusive).
+    /// @return A distinct, uniformly distributed number less than max.
     function randomUintLessThan(
         RNGState memory st,
         uint224 max
