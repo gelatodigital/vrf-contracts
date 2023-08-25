@@ -19,6 +19,46 @@ Some small difference lie in the setup required to make the W3F work depending o
 
 2. For the Chainlink Compatible VRF the `VRFCoordinatorV2Adapter.sol` contract has to be deployed. Each user has to deploy its own instance of the adapter. This can be easily achieved through the `VRFCoordinatorV2AdapterFactory.sol` factory contract, which also needs to be deployed on every supported chain.
 
+### Arbitrary user data
+
+To enable further composability the `requestedRandomness` method in `Inbox.sol` supports passing arbitrary data that the W3F will forward in the callback.
+This allows to identify in a clear way multiple calls to the W3F. For example, if we wanted to create an NFT collection with some random features its mint function would call the VRF's inbox to ask for a random number from which it should generate those feature; To keep track of which user is supposed to receive the new random NFT the user that requested the mint has to be passed through `data`.
+
+To encode arbitrary data correctly `abi.encode` can be used like that:
+
+```solidity
+// Reference the inbox instance (depends on the address)
+GelatoVRFInbox inbox = GelatoVRFInbox(0x...);
+
+// Given some arbitrary values to pass to the callback
+address arbitraryAddress = 0x...
+uint256 arbitraryUint256 = ...
+SomeContract arbitraryContract = ...
+
+// Encode into an array of bytes
+bytes arbitraryData = abi.encode(arbitraryAddress, arbitraryUint256, arbitraryContract);
+address randomnessConsumer = 0x...
+
+// Request randomness for the randomnessConsumer
+inbox.requestRandomness(randomnessConsumer, arbitraryData);
+```
+
+The randomness consumer is then able to decode the data using `abi.decode` in the `fullfillRandomness` method:
+
+```solidity
+function fullfillRandomness(
+    uint256 randomness,
+    bytes calldata data
+) external {
+    // Decode the variables specifying their types
+    (address arbitraryAddress, uint256 arbitraryUint256, SomeContract arbitraryContract) =
+    abi.decode(data, (address, uint256, SomeContract));
+
+    // Do something with the decode variables
+    // ...
+}
+```
+
 ## Web3 Function Details
 
 ### User arguments
