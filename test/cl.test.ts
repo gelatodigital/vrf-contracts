@@ -15,14 +15,14 @@ import {
   HttpChainClient,
   roundAt,
 } from "drand-client";
-import { fastnet } from "../src/drand_info";
+import { quicknet } from "../src/drand_info";
 
 const DRAND_OPTIONS: ChainOptions = {
   disableBeaconVerification: false,
   noCache: false,
   chainVerificationParams: {
-    chainHash: fastnet.hash,
-    publicKey: fastnet.public_key,
+    chainHash: quicknet.hash,
+    publicKey: quicknet.public_key,
   },
 };
 
@@ -62,7 +62,7 @@ describe("Chainlink Adapter Test Suite", function () {
 
     // Drand testing client
     chain = new HttpCachingChain(
-      `https://api.drand.sh/${fastnet.hash}`,
+      `https://api.drand.sh/${quicknet.hash}`,
       DRAND_OPTIONS
     );
     client = new HttpChainClient(chain, DRAND_OPTIONS);
@@ -89,7 +89,7 @@ describe("Chainlink Adapter Test Suite", function () {
 
     const exec = await vrf.run({ userArgs });
     const res = exec.result as Web3FunctionResultV2;
-    const round = roundAt(Date.now(), fastnet);
+    const round = roundAt(Date.now(), quicknet);
 
     if (!res.canExec) assert.fail(res.message);
 
