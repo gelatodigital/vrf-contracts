@@ -48,6 +48,6 @@ library RNGLib {
         RNGState memory st,
         uint224 max
     ) internal pure returns (uint224) {
-        return uint224(randomUint256(st)) % max;
+        return uint224(randomUint256(st) % max);
     }
 }
