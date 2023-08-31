@@ -16,7 +16,7 @@ const INBOX_ABI = [
   "event RequestedRandomness(address callback, address indexed sender, bytes data)",
 ];
 const CALLBACK_ABI = [
-  "function fullfillRandomness(uint256 randomness, bytes calldata data) external",
+  "function fulfillRandomness(uint256 randomness, bytes calldata data) external",
 ];
 
 // w3f constants
@@ -81,7 +81,7 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
     const encodedRandomness = ethers.BigNumber.from(`0x${randomness}`);
     callData.push({
       to: callbackAddress,
-      data: callback.interface.encodeFunctionData("fullfillRandomness", [
+      data: callback.interface.encodeFunctionData("fulfillRandomness", [
         encodedRandomness,
         data,
       ]),
