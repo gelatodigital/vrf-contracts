@@ -34,9 +34,7 @@ async function fetchDrandResponse(round?: number) {
     // Cloudflare
     "https://drand.cloudflare.com",
     // Storswift
-    // Does not serve the fastnet/quicknet Drand feeds as of 2023-07-18 (only the 30 seconds feed)
-    // Uncomment if this changes
-    // "https://api.drand.secureweb3.com:6875",
+    "https://api.drand.secureweb3.com:6875",
   ]);
 
   console.log("Fetching randomness");
