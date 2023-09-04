@@ -11,7 +11,7 @@ contract VRFCoordinatorV2AdapterFactory {
     /// @param adapter The address of the created adapter.
     event AdapterCreated(address indexed creator, address adapter);
 
-	/// Mapping to keep track of which deployer created which adapter.
+    /// Mapping to keep track of which deployer created which adapter.
     mapping(address deployer => address adapter) public adapterRegistry;
 
     /// @notice Create a new instance of VRFCoordinatorV2Adapter.
