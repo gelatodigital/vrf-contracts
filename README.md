@@ -3,7 +3,7 @@
 Gelato VRF is a project that combines [Drand](drand.love) with Gelato Web3 Functions to obtain a randomness providing oracle for EVM-compatible blockchains. 
 
 ## Implementation Overview
-In this repository you can find a Gelato Web3 Function that acts as the oracle for the smart contracts requesting randomness on-chain. The W3F is designed to listen for the `RequestedRandomness` event and fullfill it accordingly.
+In this repository you can find a Gelato Web3 Function that acts as the oracle for the smart contracts requesting randomness on-chain. The W3F is designed to listen for the `RequestedRandomness` event and fulfill it accordingly.
 
 ### Contracts
 In the repositories the smart contracts are designed to cover two main use-cases:
@@ -43,10 +43,10 @@ address randomnessConsumer = 0x...
 inbox.requestRandomness(randomnessConsumer, arbitraryData);
 ```
 
-The randomness consumer is then able to decode the data using `abi.decode` in the `fullfillRandomness` method:
+The randomness consumer is then able to decode the data using `abi.decode` in the `fulfillRandomness` method:
 
 ```solidity
-function fullfillRandomness(
+function fulfillRandomness(
     uint256 randomness,
     bytes calldata data
 ) external {
