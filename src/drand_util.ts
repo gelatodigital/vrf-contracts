@@ -9,14 +9,14 @@ import {
   roundTime,
 } from "drand-client";
 
-import { fastnet } from "./drand_info";
+import { quicknet } from "./drand_info";
 
 const DRAND_OPTIONS: ChainOptions = {
   disableBeaconVerification: false,
   noCache: false,
   chainVerificationParams: {
-    chainHash: fastnet.hash,
-    publicKey: fastnet.public_key,
+    chainHash: quicknet.hash,
+    publicKey: quicknet.public_key,
   },
 };
 
@@ -41,7 +41,10 @@ async function fetchDrandResponse(round?: number) {
   const errors: Error[] = [];
   for (const url of urls) {
     console.log(`Trying ${url}...`);
-    const chain = new HttpCachingChain(`${url}/${fastnet.hash}`, DRAND_OPTIONS);
+    const chain = new HttpCachingChain(
+      `${url}/${quicknet.hash}`,
+      DRAND_OPTIONS
+    );
     const client = new HttpChainClient(chain, DRAND_OPTIONS);
     try {
       return await fetchBeacon(client, round);
@@ -54,8 +57,8 @@ async function fetchDrandResponse(round?: number) {
 
 export async function getNextRandomness() {
   const now = Date.now();
-  const nextRound = roundAt(now, fastnet) + 1;
-  await sleep(roundTime(fastnet, nextRound) - now);
+  const nextRound = roundAt(now, quicknet) + 1;
+  await sleep(roundTime(quicknet, nextRound) - now);
   const { round, randomness } = await fetchDrandResponse(nextRound);
   console.log(`Fulfilling from round ${round}`);
   return randomness;
