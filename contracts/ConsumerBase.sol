@@ -7,19 +7,23 @@ import {GelatoVRFInbox} from "contracts/Inbox.sol";
 /// @title GelatoVRFConsumerBase
 /// @dev This contract handles domain separation between consecutive randomness requests
 abstract contract GelatoVRFConsumerBase is GelatoVRFConsumer {
-    uint256 private __requestIdCounter = 1;
+    uint64 private __requestIdCounter = 1;
 
     function _inbox() internal view virtual returns (GelatoVRFInbox);
 
     function _operator() internal view virtual returns (address);
 
-    function _requestRandomness(bytes memory extraData) internal {
-        bytes memory data = abi.encode(__requestIdCounter++, extraData);
+    function _requestRandomness(
+        bytes memory extraData
+    ) internal returns (uint64 requestId) {
+        requestId = __requestIdCounter++;
+        bytes memory data = abi.encode(requestId, extraData);
         _inbox().requestRandomness(this, data);
     }
 
     function _fulfillRandomness(
         bytes32 seed,
+        uint64 requestId,
         bytes memory extraData
     ) internal virtual;
 
@@ -31,11 +35,11 @@ abstract contract GelatoVRFConsumerBase is GelatoVRFConsumer {
         bytes calldata data
     ) external {
         require(msg.sender == _operator());
-        (uint256 requestId, bytes memory extraData) = abi.decode(
+        (uint64 requestId, bytes memory extraData) = abi.decode(
             data,
-            (uint256, bytes)
+            (uint64, bytes)
         );
         bytes32 seed = keccak256(abi.encode(randomness, requestId));
-        _fulfillRandomness(seed, extraData);
+        _fulfillRandomness(seed, requestId, extraData);
     }
 }
