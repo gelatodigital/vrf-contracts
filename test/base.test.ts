@@ -104,8 +104,13 @@ describe("ConsumerBase Test Suite", function () {
       expect(await mockConsumer.latestRandomness()).to.equal(
         ethers.utils.keccak256(
           abi.encode(
-            ["uint256", "uint256"],
-            [ethers.BigNumber.from(`0x${randomness}`), requestId]
+            ["uint256", "address", "uint256", "uint256"],
+            [
+              ethers.BigNumber.from(`0x${randomness}`),
+              mockConsumer.address,
+              ethers.provider.network.chainId,
+              requestId,
+            ]
           )
         )
       );
