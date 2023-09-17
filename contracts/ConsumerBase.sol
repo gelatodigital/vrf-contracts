@@ -64,7 +64,9 @@ abstract contract GelatoVRFConsumerBase is GelatoVRFConsumer {
             data,
             (uint64, bytes)
         );
-        bytes32 seed = keccak256(abi.encode(randomness, requestId));
+        bytes32 seed = keccak256(
+            abi.encode(randomness, address(this), block.chainid, requestId)
+        );
         _fulfillRandomness(seed, requestId, extraData);
     }
 }

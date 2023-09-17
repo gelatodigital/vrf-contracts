@@ -108,7 +108,9 @@ contract VRFCoordinatorV2Adapter is VRFCoordinatorV2Stub, GelatoVRFConsumer {
         require(msg.sender == _operator);
         (uint32 numWords, uint256 requestId, VRFConsumerBaseV2 consumer) = abi
             .decode(data, (uint32, uint256, VRFConsumerBaseV2));
-        bytes32 seed = keccak256(abi.encode(randomness, requestId));
+        bytes32 seed = keccak256(
+            abi.encode(randomness, address(this), block.chainid, requestId)
+        );
         uint[] memory words = new uint[](numWords);
         for (uint32 i = 0; i < numWords; i++) {
             words[i] = uint(keccak256(abi.encode(seed, i)));
