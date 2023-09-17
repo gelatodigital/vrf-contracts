@@ -3,7 +3,7 @@ import { assert, expect } from "chai";
 import { Web3FunctionHardhat } from "@gelatonetwork/web3-functions-sdk/hardhat-plugin";
 import { ContractFactory } from "ethers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { GelatoVRFInbox, MockVRFConsumer } from "../typechain";
+import { GelatoVRFInbox, MockVRFConsumerBase } from "../typechain";
 import { Web3FunctionUserArgs } from "@gelatonetwork/automate-sdk";
 import { Web3FunctionResultV2 } from "@gelatonetwork/web3-functions-sdk/*";
 const { deployments, w3f, ethers } = hre;
@@ -25,7 +25,7 @@ const DRAND_OPTIONS: ChainOptions = {
   },
 };
 
-describe("VRF Test Suite", function () {
+describe("ConsumerBase Test Suite", function () {
   // Signers
   let deployer: SignerWithAddress;
   let user: SignerWithAddress;
@@ -41,7 +41,7 @@ describe("VRF Test Suite", function () {
 
   // Contracts
   let inbox: GelatoVRFInbox;
-  let mockConsumer: MockVRFConsumer;
+  let mockConsumer: MockVRFConsumerBase;
 
   // Drand testing client
   let chain: HttpCachingChain;
@@ -58,7 +58,7 @@ describe("VRF Test Suite", function () {
     inboxFactory = await ethers.getContractFactory("GelatoVRFInbox");
 
     mockConsumerFactory = await ethers.getContractFactory(
-      "contracts/MockConsumer.sol:MockVRFConsumer"
+      "contracts/MockConsumerBase.sol:MockVRFConsumerBase"
     );
 
     // Drand testing client
@@ -73,31 +73,43 @@ describe("VRF Test Suite", function () {
     inbox = (await inboxFactory.connect(deployer).deploy()) as GelatoVRFInbox;
     mockConsumer = (await mockConsumerFactory
       .connect(deployer)
-      .deploy(inbox.address, dedicatedMsgSender.address)) as MockVRFConsumer;
+      .deploy(
+        inbox.address,
+        dedicatedMsgSender.address
+      )) as MockVRFConsumerBase;
     userArgs = { inbox: inbox.address, allowedSenders: [] };
   });
 
   const data = []; // TODO; test data
   it("Stores the latest round in the mock consumer", async () => {
-    await inbox.connect(user).requestRandomness(mockConsumer.address, data);
+    for (let i = 1; i < 3; i++) {
+      const requestId = i;
+      await mockConsumer.connect(user).requestRandomness(data);
 
-    (userArgs.allowedSenders as string[]).push(user.address);
+      (userArgs.allowedSenders as string[]).push(mockConsumer.address);
 
-    const exec = await vrf.run({ userArgs });
-    const res = exec.result as Web3FunctionResultV2;
-    const round = roundAt(Date.now(), quicknet);
+      const exec = await vrf.run({ userArgs });
+      const res = exec.result as Web3FunctionResultV2;
+      const round = roundAt(Date.now(), quicknet);
 
-    if (!res.canExec) assert.fail(res.message);
+      if (!res.canExec) assert.fail(res.message);
 
-    res.callData.forEach(
-      async (callData) => await dedicatedMsgSender.sendTransaction(callData)
-    );
+      res.callData.forEach(
+        async (callData) => await dedicatedMsgSender.sendTransaction(callData)
+      );
 
-    const { randomness } = await fetchBeacon(client, round);
+      const { randomness } = await fetchBeacon(client, round);
 
-    expect(await mockConsumer.latestRandomness()).to.equal(
-      ethers.BigNumber.from(`0x${randomness}`)
-    );
+      const abi = ethers.utils.defaultAbiCoder;
+      expect(await mockConsumer.latestRandomness()).to.equal(
+        ethers.utils.keccak256(
+          abi.encode(
+            ["uint256", "uint256"],
+            [ethers.BigNumber.from(`0x${randomness}`), requestId]
+          )
+        )
+      );
+    }
   });
 
   it("Doesn't execute if no event was emitted", async () => {
