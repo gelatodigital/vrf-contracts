@@ -59,6 +59,12 @@ function fulfillRandomness(
 }
 ```
 
+### User implementation details.
+
+When implementing a Gelato VRF into their contracts there are two possibilities available:
+1. Inherit `ConsumberBase.sol` is definitely the go-to option for most implementations since it already provides a request id and handles multiple requests in the same drand round.
+2. Implementing `Consumer.sol` is a possibility if ever you feel like you need a different implementation of the VRF. However, it is not recommended since arbitrary data should be able to handle most use cases.
+
 ## Web3 Function Details
 
 ### User arguments
