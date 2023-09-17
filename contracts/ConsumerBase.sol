@@ -6,10 +6,10 @@ import {GelatoVRFInbox} from "contracts/Inbox.sol";
 
 /// @title GelatoVRFConsumerBase
 /// @dev This contract handles domain separation between consecutive randomness requests
-/// The contract has to be implemented by contracts willing to use the gelato VRF system. 
+/// The contract has to be implemented by contracts willing to use the gelato VRF system.
 /// This base contract enhances the GelatoVRFConsumer by introducing request IDs and
 /// ensuring unique random values.
-/// for different request IDs by hashing them with the random number provided by drand. 
+/// for different request IDs by hashing them with the random number provided by drand.
 /// For security considerations, refer to the Gelato documentation.
 abstract contract GelatoVRFConsumerBase is GelatoVRFConsumer {
     uint64 private _requestIdCounter = 1;
@@ -26,7 +26,7 @@ abstract contract GelatoVRFConsumerBase is GelatoVRFConsumer {
     function _operator() internal view virtual returns (address);
 
     /// @notice Requests randomness from the Gelato VRF.
-    /// @dev The extraData parameter allows for additional data to be passed to 
+    /// @dev The extraData parameter allows for additional data to be passed to
     /// the VRF, which is then forwarded to the callback. This is useful for
     /// request tracking purposes if requestId is not enough.
     /// @param extraData Additional data for the randomness request.
