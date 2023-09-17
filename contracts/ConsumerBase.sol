@@ -7,7 +7,7 @@ import {GelatoVRFInbox} from "contracts/Inbox.sol";
 /// @title GelatoVRFConsumerBase
 /// @dev This contract handles domain separation between consecutive randomness requests
 abstract contract GelatoVRFConsumerBase is GelatoVRFConsumer {
-    uint64 private __requestIdCounter = 1;
+    uint64 private requestIdCounter = 1;
 
     function _inbox() internal view virtual returns (GelatoVRFInbox);
 
@@ -16,7 +16,7 @@ abstract contract GelatoVRFConsumerBase is GelatoVRFConsumer {
     function _requestRandomness(
         bytes memory extraData
     ) internal returns (uint64 requestId) {
-        requestId = __requestIdCounter++;
+        requestId = requestIdCounter++;
         bytes memory data = abi.encode(requestId, extraData);
         _inbox().requestRandomness(this, data);
     }
