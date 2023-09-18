@@ -7,15 +7,11 @@ import {
   Web3FunctionContext,
 } from "@gelatonetwork/web3-functions-sdk";
 
-import { hexZeroPad } from "ethers/lib/utils";
-
 import { getNextRandomness } from "../../src/drand_util";
 
 // contract abis
-const INBOX_ABI = [
-  "event RequestedRandomness(address callback, address indexed sender, bytes data)",
-];
-const CALLBACK_ABI = [
+const CONSUMER_ABI = [
+  "event RequestedRandomness(bytes data)",
   "function fulfillRandomness(uint256 randomness, bytes calldata data) external",
 ];
 
@@ -29,9 +25,8 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
 
   const provider = multiChainProvider.default();
 
-  const allowedSenders = userArgs.allowedSenders as string[];
-  const inboxAddress = userArgs.inbox as string;
-  const inbox = new Contract(inboxAddress, INBOX_ABI, provider);
+  const consumerAddress = userArgs.consumerAddress as string[];
+  const consumer = new Contract(consumerAddress, CONSUMER_ABI, provider);
 
   const currentBlock = await provider.getBlockNumber();
   const lastBlockStr = await storage.get("lastBlockNumber");
@@ -39,10 +34,7 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
     ? parseInt(lastBlockStr)
     : currentBlock - MAX_DEPTH;
 
-  const topics = [
-    inbox.interface.getEventTopic("RequestedRandomness"),
-    allowedSenders.map((e) => hexZeroPad(e, 32)),
-  ];
+  const topics = [consumer.interface.getEventTopic("RequestedRandomness")];
 
   // Fetch recent logs in range of 100 blocks
   const logs: Log[] = [];
@@ -53,7 +45,7 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
     const toBlock = Math.min(fromBlock + MAX_RANGE, currentBlock);
     try {
       const eventFilter = {
-        address: inbox.address,
+        address: consumer.address,
         topics: topics,
         fromBlock,
         toBlock,
@@ -76,12 +68,11 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
   const randomness = await getNextRandomness();
   const encodedRandomness = ethers.BigNumber.from(`0x${randomness}`);
   for (const log of logs) {
-    const event = inbox.interface.parseLog(log);
-    const [callbackAddress, , data] = event.args;
-    const callback = new Contract(callbackAddress, CALLBACK_ABI, provider);
+    const event = consumer.interface.parseLog(log);
+    const [data] = event.args;
     callData.push({
-      to: callbackAddress,
-      data: callback.interface.encodeFunctionData("fulfillRandomness", [
+      to: consumerAddress,
+      data: consumer.interface.encodeFunctionData("fulfillRandomness", [
         encodedRandomness,
         data,
       ]),

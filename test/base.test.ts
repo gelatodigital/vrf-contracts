@@ -3,7 +3,7 @@ import { assert, expect } from "chai";
 import { Web3FunctionHardhat } from "@gelatonetwork/web3-functions-sdk/hardhat-plugin";
 import { ContractFactory } from "ethers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { GelatoVRFInbox, MockVRFConsumerBase } from "../typechain";
+import { MockVRFConsumerBase } from "../typechain";
 import { Web3FunctionUserArgs } from "@gelatonetwork/automate-sdk";
 import { Web3FunctionResultV2 } from "@gelatonetwork/web3-functions-sdk/*";
 const { deployments, w3f, ethers } = hre;
@@ -36,11 +36,9 @@ describe("ConsumerBase Test Suite", function () {
   let userArgs: Web3FunctionUserArgs;
 
   // Factories
-  let inboxFactory: ContractFactory;
   let mockConsumerFactory: ContractFactory;
 
   // Contracts
-  let inbox: GelatoVRFInbox;
   let mockConsumer: MockVRFConsumerBase;
 
   // Drand testing client
@@ -55,8 +53,6 @@ describe("ConsumerBase Test Suite", function () {
     vrf = w3f.get("vrf");
 
     // Solidity contracts
-    inboxFactory = await ethers.getContractFactory("GelatoVRFInbox");
-
     mockConsumerFactory = await ethers.getContractFactory(
       "contracts/MockConsumerBase.sol:MockVRFConsumerBase"
     );
@@ -70,14 +66,10 @@ describe("ConsumerBase Test Suite", function () {
   });
 
   this.beforeEach(async () => {
-    inbox = (await inboxFactory.connect(deployer).deploy()) as GelatoVRFInbox;
     mockConsumer = (await mockConsumerFactory
       .connect(deployer)
-      .deploy(
-        inbox.address,
-        dedicatedMsgSender.address
-      )) as MockVRFConsumerBase;
-    userArgs = { inbox: inbox.address, allowedSenders: [] };
+      .deploy(dedicatedMsgSender.address)) as MockVRFConsumerBase;
+    userArgs = { consumerAddress: mockConsumer.address };
   });
 
   const data = []; // TODO; test data
@@ -85,8 +77,6 @@ describe("ConsumerBase Test Suite", function () {
     for (let i = 1; i < 3; i++) {
       const requestId = i;
       await mockConsumer.connect(user).requestRandomness(data);
-
-      (userArgs.allowedSenders as string[]).push(mockConsumer.address);
 
       const exec = await vrf.run({ userArgs });
       const res = exec.result as Web3FunctionResultV2;

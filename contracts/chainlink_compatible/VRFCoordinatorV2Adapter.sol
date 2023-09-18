@@ -11,16 +11,6 @@ import {
 /// @dev This contract acts as an adapter between Gelato and Chainlink VRF.
 /// It allows Gelato to make VRF randomness requests using Chainlink's VRF Coordinator V2 contract.
 contract VRFCoordinatorV2Adapter is VRFCoordinatorV2Stub, GelatoVRFConsumer {
-    /// @notice Event emitted when a randomness request is made.
-    /// @param callback The GelatoVRFConsumer contract to receive the randomness callback.
-    /// @param sender The address of the sender who initiated the request.
-    /// @param data Additional data associated with the request.
-    event RequestedRandomness(
-        GelatoVRFConsumer callback,
-        address indexed sender,
-        bytes data
-    );
-
     /// @dev Emitted when an attempt is made to request randomness with zero minimum confirmations.
     error ZeroConfirmationsRequested();
 
@@ -90,11 +80,7 @@ contract VRFCoordinatorV2Adapter is VRFCoordinatorV2Stub, GelatoVRFConsumer {
 
         // Increment the requestId counter and emit the randomness request event
         requestId = _requestIdCounter++;
-        emit RequestedRandomness(
-            this,
-            msg.sender,
-            abi.encode(numWords, requestId, consumer)
-        );
+        emit RequestedRandomness(abi.encode(numWords, requestId, consumer));
         return requestId;
     }
 

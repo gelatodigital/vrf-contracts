@@ -5,6 +5,10 @@ pragma solidity 0.8.18;
 /// @dev Interface for consuming random number provided by Drand.
 /// @notice This interface allows contracts to receive a random number provided by Gelato VRF.
 interface GelatoVRFConsumer {
+    /// @notice Event emitted when a randomness request is made.
+    /// @param data Additional data associated with the request.
+    event RequestedRandomness(bytes data);
+
     /// @notice Callback function used by Gelato to return the random number.
     /// @dev The random number is fetched from one among many drand endpoints
     /// and passed back to this function like in a Gelato Web3 Function.
