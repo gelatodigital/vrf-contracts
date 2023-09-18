@@ -20,9 +20,8 @@ const CALLBACK_ABI = [
 ];
 
 // w3f constants
-const MAX_DEPTH = 700;
 const MAX_RANGE = 100; // limit range of events to comply with rpc providers
-const MAX_REQUESTS = 100; // limit number of requests on every execution to avoid hitting timeout
+const MAX_REQUESTS = 5; // limit number of requests on every execution to avoid hitting timeout
 
 Web3Function.onRun(async (context: Web3FunctionContext) => {
   const { userArgs, storage, multiChainProvider } = context;
@@ -34,10 +33,7 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
   const inbox = new Contract(inboxAddress, INBOX_ABI, provider);
 
   const currentBlock = await provider.getBlockNumber();
-  const lastBlockStr = await storage.get("lastBlockNumber");
-  let lastBlock = lastBlockStr
-    ? parseInt(lastBlockStr)
-    : currentBlock - MAX_DEPTH;
+  const lastBlock = parseInt(await storage.get("lastBlockNumber") as string);
 
   const topics = [
     inbox.interface.getEventTopic("RequestedRandomness"),
