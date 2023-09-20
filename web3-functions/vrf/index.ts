@@ -33,7 +33,7 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
   const inbox = new Contract(inboxAddress, INBOX_ABI, provider);
 
   const currentBlock = await provider.getBlockNumber();
-  let lastBlock = parseInt(await storage.get("lastBlockNumber") as string);
+  let lastBlock = parseInt((await storage.get("lastBlockNumber")) as string);
 
   const topics = [
     inbox.interface.getEventTopic("RequestedRandomness"),
