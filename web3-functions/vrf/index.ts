@@ -22,6 +22,8 @@ const CALLBACK_ABI = [
 // w3f constants
 const MAX_RANGE = 100; // limit range of events to comply with rpc providers
 const MAX_REQUESTS = 5; // limit number of requests on every execution to avoid hitting timeout
+const MAX_DEPTH = MAX_RANGE * MAX_REQUESTS; // How far the VRF should catch up with blocks
+const MAX_DISTANCE = 1000; // Helpful to detect if the VRF has been paused not to recover too many blocks 
 
 Web3Function.onRun(async (context: Web3FunctionContext) => {
   const { userArgs, storage, multiChainProvider } = context;
@@ -33,7 +35,12 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
   const inbox = new Contract(inboxAddress, INBOX_ABI, provider);
 
   const currentBlock = await provider.getBlockNumber();
-  let lastBlock = parseInt((await storage.get("lastBlockNumber")) as string);
+  const lastBlockStr = await storage.get("lastBlockNumber");
+  let lastBlock = lastBlockStr ? parseInt(lastBlockStr) : 0;
+
+  if (!lastBlockStr || currentBlock - lastBlock > MAX_DISTANCE) {
+    lastBlock = currentBlock - MAX_DEPTH;
+  }
 
   const topics = [
     inbox.interface.getEventTopic("RequestedRandomness"),
