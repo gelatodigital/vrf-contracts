@@ -108,7 +108,7 @@ describe("ConsumerBase Test Suite", function () {
             [
               ethers.BigNumber.from(`0x${randomness}`),
               mockConsumer.address,
-              ethers.provider.network.chainId,
+              (await ethers.provider.getNetwork()).chainId,
               requestId,
             ]
           )

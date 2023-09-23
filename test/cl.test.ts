@@ -104,8 +104,8 @@ describe("Chainlink Adapter Test Suite", function () {
         ["uint256", "address", "uint256", "uint32"],
         [
           ethers.BigNumber.from(`0x${randomness}`),
-          mockConsumer.address,
-          ethers.provider.network.chainId,
+          adapter.address,
+          (await ethers.provider.getNetwork()).chainId,
           requestId,
         ]
       )
