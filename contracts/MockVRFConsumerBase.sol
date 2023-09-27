@@ -4,7 +4,7 @@ pragma solidity 0.8.18;
 import {GelatoVRFConsumerBase} from "./GelatoVRFConsumerBase.sol";
 
 contract MockVRFConsumerBase is GelatoVRFConsumerBase {
-    bytes32 public latestRandomness;
+    uint256 public latestRandomness;
     uint64 public latestRequestId;
     address private immutable _operatorAddr;
 
@@ -21,7 +21,7 @@ contract MockVRFConsumerBase is GelatoVRFConsumerBase {
     }
 
     function _fulfillRandomness(
-        bytes32 randomness,
+        uint256 randomness,
         uint64 requestId,
         bytes memory
     ) internal override {
