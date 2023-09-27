@@ -75,13 +75,11 @@ describe("Chainlink Adapter Test Suite", function () {
     mockConsumer = (await mockConsumerFactory
       .connect(deployer)
       .deploy(adapter.address)) as MockVRFConsumer;
-    userArgs = { inbox: adapter.address, allowedSenders: [] };
+    userArgs = { consumerAddress: adapter.address };
   });
 
   it("Stores the latest round in the mock consumer", async () => {
     const numWords = 3;
-
-    (userArgs.allowedSenders as string[]).push(mockConsumer.address);
 
     await mockConsumer.connect(user).requestRandomWords(numWords);
     const requestId = await mockConsumer.requestId();

@@ -2,7 +2,6 @@
 pragma solidity 0.8.18;
 
 import {GelatoVRFConsumer} from "contracts/Consumer.sol";
-import {GelatoVRFInbox} from "contracts/Inbox.sol";
 
 /// @title GelatoVRFConsumerBase
 /// @dev This contract handles domain separation between consecutive randomness requests
@@ -13,12 +12,6 @@ import {GelatoVRFInbox} from "contracts/Inbox.sol";
 /// For security considerations, refer to the Gelato documentation.
 abstract contract GelatoVRFConsumerBase is GelatoVRFConsumer {
     bool[] public requestPending;
-
-    /// @notice Returns the unique inbox instance per chain,
-    /// unless the user opts for a specific instance (not recommended).
-    /// @dev This function is primarily for internal use.
-    /// @return An instance of the GelatoVRFInbox.
-    function _inbox() internal view virtual returns (GelatoVRFInbox);
 
     /// @notice Returns the address of the dedicated msg.sender.
     /// @dev The operator can be found on the Gelato dashboard after a VRF is deployed.
@@ -38,7 +31,7 @@ abstract contract GelatoVRFConsumerBase is GelatoVRFConsumer {
         requestPending.push();
         requestPending[requestId] = true;
         bytes memory data = abi.encode(requestId, extraData);
-        _inbox().requestRandomness(this, data);
+        emit RequestedRandomness(data);
     }
 
     /// @notice User logic to handle the random value received.

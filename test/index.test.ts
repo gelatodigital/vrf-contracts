@@ -3,7 +3,7 @@ import { assert, expect } from "chai";
 import { Web3FunctionHardhat } from "@gelatonetwork/web3-functions-sdk/hardhat-plugin";
 import { ContractFactory } from "ethers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { GelatoVRFInbox, MockVRFConsumer } from "../typechain";
+import { MockVRFConsumer } from "../typechain";
 import { Web3FunctionUserArgs } from "@gelatonetwork/automate-sdk";
 import { Web3FunctionResultV2 } from "@gelatonetwork/web3-functions-sdk/*";
 const { deployments, w3f, ethers } = hre;
@@ -36,11 +36,9 @@ describe("VRF Test Suite", function () {
   let userArgs: Web3FunctionUserArgs;
 
   // Factories
-  let inboxFactory: ContractFactory;
   let mockConsumerFactory: ContractFactory;
 
   // Contracts
-  let inbox: GelatoVRFInbox;
   let mockConsumer: MockVRFConsumer;
 
   // Drand testing client
@@ -55,8 +53,6 @@ describe("VRF Test Suite", function () {
     vrf = w3f.get("vrf");
 
     // Solidity contracts
-    inboxFactory = await ethers.getContractFactory("GelatoVRFInbox");
-
     mockConsumerFactory = await ethers.getContractFactory(
       "contracts/MockConsumer.sol:MockVRFConsumer"
     );
@@ -70,18 +66,14 @@ describe("VRF Test Suite", function () {
   });
 
   this.beforeEach(async () => {
-    inbox = (await inboxFactory.connect(deployer).deploy()) as GelatoVRFInbox;
     mockConsumer = (await mockConsumerFactory
       .connect(deployer)
-      .deploy(inbox.address, dedicatedMsgSender.address)) as MockVRFConsumer;
-    userArgs = { inbox: inbox.address, allowedSenders: [] };
+      .deploy(dedicatedMsgSender.address)) as MockVRFConsumer;
+    userArgs = { consumerAddress: mockConsumer.address };
   });
 
-  const data = []; // TODO; test data
   it("Stores the latest round in the mock consumer", async () => {
-    await inbox.connect(user).requestRandomness(mockConsumer.address, data);
-
-    (userArgs.allowedSenders as string[]).push(user.address);
+    await mockConsumer.connect(user).requestRandomness();
 
     const exec = await vrf.run({ userArgs });
     const res = exec.result as Web3FunctionResultV2;
