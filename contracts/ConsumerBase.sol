@@ -12,7 +12,7 @@ import {GelatoVRFInbox} from "contracts/Inbox.sol";
 /// for different request IDs by hashing them with the random number provided by drand.
 /// For security considerations, refer to the Gelato documentation.
 abstract contract GelatoVRFConsumerBase is GelatoVRFConsumer {
-    uint64 private _requestIdCounter = 1;
+    bool[] public requestPending;
 
     /// @notice Returns the unique inbox instance per chain,
     /// unless the user opts for a specific instance (not recommended).
@@ -34,7 +34,9 @@ abstract contract GelatoVRFConsumerBase is GelatoVRFConsumer {
     function _requestRandomness(
         bytes memory extraData
     ) internal returns (uint64 requestId) {
-        requestId = _requestIdCounter++;
+        requestId = uint64(requestPending.length);
+        requestPending.push();
+        requestPending[requestId] = true;
         bytes memory data = abi.encode(requestId, extraData);
         _inbox().requestRandomness(this, data);
     }
@@ -67,6 +69,9 @@ abstract contract GelatoVRFConsumerBase is GelatoVRFConsumer {
         bytes32 seed = keccak256(
             abi.encode(randomness, address(this), block.chainid, requestId)
         );
-        _fulfillRandomness(seed, requestId, extraData);
+        if (requestPending[requestId]) {
+            _fulfillRandomness(seed, requestId, extraData);
+            requestPending[requestId] = false;
+        }
     }
 }

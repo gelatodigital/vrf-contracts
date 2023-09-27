@@ -82,7 +82,7 @@ describe("ConsumerBase Test Suite", function () {
 
   const data = []; // TODO; test data
   it("Stores the latest round in the mock consumer", async () => {
-    for (let i = 1; i < 3; i++) {
+    for (let i = 0; i < 2; i++) {
       const requestId = i;
       await mockConsumer.connect(user).requestRandomness(data);
 
