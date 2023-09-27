@@ -93,17 +93,14 @@ describe("VRF Test Suite", function () {
   });
 
   it("When paused it catches up the specified amount of blocks", async () => {
-    (userArgs.allowedSenders as string[]).push(user.address);
-
-    // Simulates request to ignore
-    await inbox.connect(user).requestRandomness(mockConsumer.address, data);
+    await mockConsumer.connect(user).requestRandomness();
 
     // Triggers pause condition
     for (let i = 0; i < 1001; ++i) ethers.provider.send("evm_mine", []);
 
     // Spams requests, only the last MAX_RANGE * MAX_REQUESTS should be picked up
     for (let i = 0; i < 1000; ++i) {
-      await inbox.connect(user).requestRandomness(mockConsumer.address, data);
+      await mockConsumer.connect(user).requestRandomness();
     }
 
     const exec = await vrf.run({ userArgs });
