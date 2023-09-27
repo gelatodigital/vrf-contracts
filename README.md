@@ -15,7 +15,7 @@ Both the aforementioned contracts implement the `GelatoVRFConsumer.sol` interfac
 
 Some small difference lie in the setup required to make the W3F work depending on which use-case is being targeted.
 
-1. For the Gelato VRF to work, the `GelatoVRFConsumerBase.sol` contract has to be implemented correctly in the contract that should request and use the random number.
+1. For the Gelato VRF to work, the `GelatoVRFConsumerBase.sol` contract has to be inherited in the contract that should request and use the random number.
 
 2. For the Chainlink Compatible VRF the `VRFCoordinatorV2Adapter.sol` contract has to be deployed. Each user has to deploy its own instance of the adapter. This can be easily achieved through the `VRFCoordinatorV2AdapterFactory.sol` factory contract, which also needs to be deployed on every supported chain.
 
