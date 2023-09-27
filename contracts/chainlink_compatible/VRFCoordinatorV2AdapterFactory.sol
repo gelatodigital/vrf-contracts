@@ -21,6 +21,8 @@ contract VRFCoordinatorV2AdapterFactory {
     function make(
         address operator
     ) external returns (VRFCoordinatorV2Adapter adapter) {
+        if (adapterRegistry[msg.sender] != address(0))
+            return adapterRegistry[msg.sender];
         adapter = new VRFCoordinatorV2Adapter(operator);
         adapterRegistry[msg.sender] = address(adapter);
         emit AdapterCreated(msg.sender, address(adapter));
