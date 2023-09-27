@@ -52,7 +52,7 @@ abstract contract GelatoVRFConsumerBase is GelatoVRFConsumer {
         uint256 randomness,
         bytes calldata data
     ) external {
-        require(msg.sender == _operator());
+        require(msg.sender == _operator(), "only operator");
         (uint64 requestId, bytes memory extraData) = abi.decode(
             data,
             (uint64, bytes)
