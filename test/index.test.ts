@@ -54,7 +54,7 @@ describe("VRF Test Suite", function () {
 
     // Solidity contracts
     mockConsumerFactory = await ethers.getContractFactory(
-      "contracts/MockConsumer.sol:MockVRFConsumer"
+      "contracts/MockVRFConsumer.sol:MockVRFConsumer"
     );
 
     // Drand testing client

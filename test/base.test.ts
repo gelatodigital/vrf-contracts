@@ -54,7 +54,7 @@ describe("ConsumerBase Test Suite", function () {
 
     // Solidity contracts
     mockConsumerFactory = await ethers.getContractFactory(
-      "contracts/MockConsumerBase.sol:MockVRFConsumerBase"
+      "contracts/MockVRFConsumerBase.sol:MockVRFConsumerBase"
     );
 
     // Drand testing client
