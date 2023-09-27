@@ -11,7 +11,7 @@ In the repositories the smart contracts are designed to cover two main use-cases
 1. "Vanilla" Gelato VRF should be in most cases the default option and allows to query and receive random numbers by implementing the `GelatoVRFConsumerBase.sol` contract
 2. Handle Chainlink VRF compliant requests through the `VRFCoordinatorV2Adapter.sol` contract.
 
-Both the aforementioned abstract contracts implement the `GelatoVRFConsumer.sol` interface, which is what the Web3 Function is able to operate with.
+Both the aforementioned contracts implement the `GelatoVRFConsumer.sol` interface, which is what the Web3 Function is able to operate with.
 
 Some small difference lie in the setup required to make the W3F work depending on which use-case is being targeted.
 
