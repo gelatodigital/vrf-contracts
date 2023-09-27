@@ -69,7 +69,7 @@ When implementing a Gelato VRF into their contracts there are two possibilities 
 ## Web3 Function Details
 
 ### User arguments
-- `consumerAddress: string` is the address that is receives the callback from the W3F.
+- `consumerAddress: string` is the address that requests randomness and receives the callback from the W3F.
 
 ### Storage
 
