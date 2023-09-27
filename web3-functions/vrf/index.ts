@@ -23,7 +23,7 @@ const CALLBACK_ABI = [
 const MAX_RANGE = 100; // limit range of events to comply with rpc providers
 const MAX_REQUESTS = 5; // limit number of requests on every execution to avoid hitting timeout
 const MAX_DEPTH = MAX_RANGE * MAX_REQUESTS; // How far the VRF should catch up with blocks
-const MAX_DISTANCE = 1000; // Helpful to detect if the VRF has been paused not to recover too many blocks 
+const MAX_DISTANCE = 1000; // Helpful to detect if the VRF has been paused not to recover too many blocks
 
 Web3Function.onRun(async (context: Web3FunctionContext) => {
   const { userArgs, storage, multiChainProvider } = context;

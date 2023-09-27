@@ -109,9 +109,8 @@ describe("VRF Test Suite", function () {
     // Triggers pause condition
     for (let i = 0; i < 1001; ++i) ethers.provider.send("evm_mine", []);
 
-
     // Spams requests, only the last MAX_RANGE * MAX_REQUESTS should be picked up
-    for (let i = 0; i < 1000; ++i) { 
+    for (let i = 0; i < 1000; ++i) {
       await inbox.connect(user).requestRandomness(mockConsumer.address, data);
     }
 
