@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.18;
 
-import {GelatoVRFConsumer} from "contracts/Consumer.sol";
+import {GelatoVRFConsumer} from "contracts/GelatoVRFConsumer.sol";
 
 /// @title GelatoVRFConsumerBase
 /// @dev This contract handles domain separation between consecutive randomness requests

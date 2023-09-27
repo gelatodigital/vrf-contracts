@@ -2,7 +2,7 @@
 pragma solidity 0.8.18;
 
 import {VRFCoordinatorV2Stub} from "./internal/VRFCoordinatorV2Stub.sol";
-import {GelatoVRFConsumer} from "contracts/Consumer.sol";
+import {GelatoVRFConsumer} from "contracts/GelatoVRFConsumer.sol";
 import {
     VRFConsumerBaseV2
 } from "@chainlink/contracts/src/v0.8/VRFConsumerBaseV2.sol";
