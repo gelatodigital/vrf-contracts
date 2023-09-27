@@ -8,21 +8,22 @@ In this repository you can find a Gelato Web3 Function that acts as the oracle f
 ### Contracts
 In the repositories the smart contracts are designed to cover two main use-cases:
 
-1. Gelato VRF is offered through the `Inbox.sol` contracts that collects requests that are then dispatched by the W3F.
+1. "Vanilla" Gelato VRF should be in most cases the default option and allows to query and receive random numbers by implementing the `GelatoVRFConsumerBase.sol` contract
 2. Handle Chainlink VRF compliant requests through the `VRFCoordinatorV2Adapter.sol` contract.
 
-The same W3F script powers both use cases. Only the smart contracts are different.
+Both the aforementioned contracts implement the `GelatoVRFConsumer.sol` interface, which is what the Web3 Function is able to operate with.
 
 Some small difference lie in the setup required to make the W3F work depending on which use-case is being targeted.
 
-1. For the Gelato VRF to work, the `Inbox.sol` contract needs to be deployed on the targeted chain. Ideally once the team deploys the inbox the chain will be fully supported (assuming full EVM-compatibility).
+1. For the Gelato VRF to work, the `GelatoVRFConsumerBase.sol` contract has to be inherited in the contract that should request and use the random number.
 
 2. For the Chainlink Compatible VRF the `VRFCoordinatorV2Adapter.sol` contract has to be deployed. Each user has to deploy its own instance of the adapter. This can be easily achieved through the `VRFCoordinatorV2AdapterFactory.sol` factory contract, which also needs to be deployed on every supported chain.
 
+It is important to note that unlike approaches that would look similar at first glance (like flashloans, that have a function to request and one to receive them) the request is not satisfied in the same block since Web3 Functions are used under the hood. 
+
 ### Arbitrary user data
 
-To enable further composability the `requestedRandomness` method in `Inbox.sol` supports passing arbitrary data that the W3F will forward in the callback.
-This allows to identify in a clear way multiple calls to the W3F. For example, if we wanted to create an NFT collection with some random features its mint function would call the VRF's inbox to ask for a random number from which it should generate those feature; To keep track of which user is supposed to receive the new random NFT the user that requested the mint has to be passed through `data`.
+To enable further composability the `requestedRandomness` method supports passing arbitrary data that the W3F will forward in the callback.
 
 To encode arbitrary data correctly `abi.encode` can be used like that:
 
@@ -62,16 +63,13 @@ function fulfillRandomness(
 ### User implementation details.
 
 When implementing a Gelato VRF into their contracts there are two possibilities available:
-1. Inherit `ConsumberBase.sol` is definitely the go-to option for most implementations since it already provides a request id and handles multiple requests in the same drand round.
-2. Implementing `Consumer.sol` is a possibility if ever you feel like you need a different implementation of the VRF. However, it is not recommended since arbitrary data should be able to handle most use cases.
+1. Inherit `GelatoVRFConsumberBase.sol` is definitely the go-to option for most implementations since it already provides a request id, handles multiple requests correctly and offers replay attack protection.
+2. Implementing `GelatoVRFConsumer.sol` is a possibility if ever you feel like you need a different implementation of the VRF. However, it is not recommended.
 
 ## Web3 Function Details
 
 ### User arguments
-- `allowedSenders: string[]` is the array of addresses that are allowed to spend the user's balance when requesting a random number. Since the access to the VRF is not gated on-chain anyone is able to call it. This allows both EOAs and SC to request on-chain randomness and trigger callbacks.
-- `inbox: string`: This parameter varies depending on the use-case picked by the user:
-    - For the Gelato VRF this is the address of the inbox that the VRF will listen to. This parameter **SHOULD NOT** be customized by the user (and it is infact added by the frontend once the network is chosen).
-    - For the CL compatible VRF this is the address of the user-deployed adapter. This parameter is returned by the factory once it deploys an adapter.
+- `consumerAddress: string` is the address that requests randomness and receives the callback from the W3F.
 
 ### Storage
 
