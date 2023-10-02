@@ -76,6 +76,8 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
   const nextCallData = [];
   const remainTx = MAX_TRANSACTIONS - callData.length
 
+  console.log(`Already ${callData.length} transactions in queue`);
+
   for (let i = 0; i < logs.length; i++) {
     const log = logs[i];
     const event = consumer.interface.parseLog(log);
@@ -100,6 +102,8 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
     }
   }
 
+  console.log(`transactions sent, ${nextCallData.length} in queue for next run`);
+  
   await storage.set("lastBlockNumber", `${currentBlock}`);
   await storage.set("oldCallData", JSON.stringify(nextCallData));
 
