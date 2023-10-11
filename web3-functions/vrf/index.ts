@@ -73,10 +73,16 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
   // Prepare calldata and rate limit
   const oldCallDataStr = await storage.get("oldCallData");
   const callData = oldCallDataStr ? JSON.parse(oldCallDataStr) : [];
+
   const nextCallData = [];
   const remainTx = MAX_TRANSACTIONS - callData.length
 
-  console.log(`Already ${callData.length} transactions in queue`);
+  // If there are already more transactions than the limit, we save the rest for the next run
+  if (remainTx < 0) {
+    nextCallData.push(...callData.slice(remainTx));
+  }
+
+  console.log(`,${callData.length} transactions in queue,`);
 
   for (let i = 0; i < logs.length; i++) {
     const log = logs[i];
@@ -101,8 +107,7 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
       });
     }
   }
-
-  console.log(`transactions sent, ${nextCallData.length} in queue for next run`);
+  console.log(`${nextCallData.length} transactions in queue for next run`);
   
   await storage.set("lastBlockNumber", `${currentBlock}`);
   await storage.set("oldCallData", JSON.stringify(nextCallData));
