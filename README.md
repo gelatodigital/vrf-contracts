@@ -5,11 +5,42 @@ Gelato VRF is a project that combines [Drand](drand.love) with Gelato Web3 Funct
 ## Implementation Overview
 In this repository you can find a Gelato Web3 Function that acts as the oracle for the smart contracts requesting randomness on-chain. The W3F is designed to listen for the `RequestedRandomness` event and fulfill it accordingly.
 
+
+
 ### Contracts
 In the repositories the smart contracts are designed to cover two main use-cases:
 
 1. "Vanilla" Gelato VRF should be in most cases the default option and allows to query and receive random numbers by implementing the `GelatoVRFConsumerBase.sol` contract
+```mermaid
+sequenceDiagram
+  participant User
+  participant Contract
+  participant GelatoVRFConsumerBase
+  participant W3F
+  participant Event
+  User->>Contract: Request Randomness
+  Contract->>GelatoVRFConsumerBase: Inherit
+  GelatoVRFConsumerBase->>Event: RequestedRandomness Event
+  Event->>W3F: Listen
+  W3F->>Contract: fulfillRandomness
+  Contract->>User: Result with randomness
+```
 2. Handle Chainlink VRF compliant requests through the `VRFCoordinatorV2Adapter.sol` contract.
+```mermaid
+sequenceDiagram
+  participant VRFCoordinatorV2AdapterFactory
+  participant User
+  participant VRFCoordinatorV2Adapter
+  participant W3F
+  participant Event
+  User->>VRFCoordinatorV2AdapterFactory: From frontend
+  VRFCoordinatorV2AdapterFactory->>VRFCoordinatorV2Adapter: Deploys
+  User->>VRFCoordinatorV2Adapter: Request Randomness
+  VRFCoordinatorV2Adapter->>Event: requestRandomWords
+  Event->>W3F: Listen
+  W3F->>VRFCoordinatorV2Adapter: fulfillRandomWords
+  VRFCoordinatorV2Adapter->>User: Return Randomness
+```
 
 Both the aforementioned contracts implement the `GelatoVRFConsumer.sol` interface, which is what the Web3 Function is able to operate with.
 
@@ -19,7 +50,7 @@ Some small difference lie in the setup required to make the W3F work depending o
 
 2. For the Chainlink Compatible VRF the `VRFCoordinatorV2Adapter.sol` contract has to be deployed. Each user has to deploy its own instance of the adapter. This can be easily achieved through the `VRFCoordinatorV2AdapterFactory.sol` factory contract, which also needs to be deployed on every supported chain.
 
-It is important to note that unlike approaches that would look similar at first glance (like flashloans, that have a function to request and one to receive them) the request is not satisfied in the same block since Web3 Functions are used under the hood. 
+It is important to note that unlike approaches that would look similar at first glance (like flashloans, that have a function to request and one to receive them) the request is not satisfied in the same block since Web3 Functions are used under the hood.
 
 ### Arbitrary user data
 
