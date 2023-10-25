@@ -618,7 +618,7 @@
     "@ethersproject/rlp" "^5.7.0"
     "@ethersproject/signing-key" "^5.7.0"
 
-"@ethersproject/units@5.7.0":
+"@ethersproject/units@5.7.0", "@ethersproject/units@^5.7.0":
   version "5.7.0"
   resolved "https://registry.yarnpkg.com/@ethersproject/units/-/units-5.7.0.tgz#637b563d7e14f42deeee39245275d477aae1d8b1"
   integrity sha512-pD3xLMy3SJu9kG5xDGI7+xhTEmGXlEqXU4OfNapmfnxLVY4EMSSRp7j1k7eezutBPH7RBN/7QPnwR7hzNlEFeg==
@@ -732,35 +732,39 @@
   optionalDependencies:
     "@trufflesuite/bigint-buffer" "1.1.9"
 
-"@gelatonetwork/automate-sdk@^2.7.0-beta":
-  version "2.7.0-beta"
-  resolved "https://registry.yarnpkg.com/@gelatonetwork/automate-sdk/-/automate-sdk-2.7.0-beta.tgz#2489c53a09420189e739c113be7b3b1ce301afc8"
-  integrity sha512-Bi3f0RnHOQh/jjTMN2R713BMQJxpKdbgWDkLqbVSkt2YBmbF2pTyyF7wEMEnRJUgZxoj6Icc5gVsrmwkZzTi2w==
+"@gelatonetwork/automate-sdk@^2.19.2-beta":
+  version "2.19.2-beta"
+  resolved "https://registry.yarnpkg.com/@gelatonetwork/automate-sdk/-/automate-sdk-2.19.2-beta.tgz#d58b42803fb30692a7294dbaadb2ec9b059654ae"
+  integrity sha512-8dZLdPKZfKurPzJ/dDXEXPfIukWH5WV0+LGqGX7rMoxNBgYFM6klTkm9I6v4IoPKV2opaN2G9BjSTm8U30yGYw==
   dependencies:
-    axios "^1.2.2"
+    axios "^1.4.0"
+    buffer "^6.0.3"
     ethers "^5.5.2"
     siwe "^1.1.6"
 
-"@gelatonetwork/web3-functions-sdk@^2.0.3":
-  version "2.0.3"
-  resolved "https://registry.yarnpkg.com/@gelatonetwork/web3-functions-sdk/-/web3-functions-sdk-2.0.3.tgz#ea6243404b8d430104e627595784900015601739"
-  integrity sha512-VutgsVycz2BH7wOQvYFf8x9CEd9Cnmxxn5JTiCijQ6ReXwEuFgbNt+6zmTX2l5OL8TTZ1Wo73PsQkTtoP4KLkA==
+"@gelatonetwork/web3-functions-sdk@^2.1.7":
+  version "2.1.7"
+  resolved "https://registry.yarnpkg.com/@gelatonetwork/web3-functions-sdk/-/web3-functions-sdk-2.1.7.tgz#1a47d702708232acb734028d6b7b01a6e664b295"
+  integrity sha512-lVK2LqKhOg2TGSHCqpmzM1NzPo8VxyppDz2SC92kywlBiGSozz35uGwqaFZF6wnoX9ghPjjNsXqEABtK4nAB/g==
   dependencies:
+    "@ethersproject/address" "^5.7.0"
+    "@ethersproject/contracts" "^5.7.0"
+    "@ethersproject/providers" "^5.7.2"
+    "@ethersproject/units" "^5.7.0"
     "@types/dockerode" "^3.3.11"
     ajv "^8.11.0"
     axios "1.1.2"
     body-parser "^1.20.1"
     colors "^1.4.0"
-    deno-bin "^1.28.1"
+    deep-object-diff "^1.1.9"
+    deno-bin "^1.36.0"
     dockerode "^3.3.4"
     dotenv "^16.0.3"
     esbuild "^0.17.4"
     eth-rpc-errors "^4.0.3"
-    ethers "^5.7.1"
     express "^4.18.2"
     form-data "^4.0.0"
     ky "^0.32.2"
-    object-hash "^3.0.0"
     pidusage "^3.0.1"
     semver "^7.5.0"
     signal-exit "^3.0.7"
@@ -1932,15 +1936,6 @@ axios@^0.21.1:
   dependencies:
     follow-redirects "^1.14.0"
 
-axios@^1.2.2:
-  version "1.3.4"
-  resolved "https://registry.yarnpkg.com/axios/-/axios-1.3.4.tgz#f5760cefd9cfb51fd2481acf88c05f67c4523024"
-  integrity sha512-toYm+Bsyl6VC5wSkfkbbNB6ROv7KY93PEBBL6xyDczaIHasAiv4wPqQ/c4RjoQzipxRD2W5g21cOqQulZ7rHwQ==
-  dependencies:
-    follow-redirects "^1.15.0"
-    form-data "^4.0.0"
-    proxy-from-env "^1.1.0"
-
 axios@^1.4.0:
   version "1.4.0"
   resolved "https://registry.yarnpkg.com/axios/-/axios-1.4.0.tgz#38a7bf1224cd308de271146038b551d725f0be1f"
@@ -2645,6 +2640,11 @@ deep-is@^0.1.3:
   resolved "https://registry.yarnpkg.com/deep-is/-/deep-is-0.1.4.tgz#a6f2dce612fadd2ef1f519b73551f17e85199831"
   integrity sha512-oIPzksmTg4/MriiaYGO+okXDT7ztn/w3Eptv/+gSIdMdKsJo0u4CfYNFJPy+4SKMuCqGw2wxnA+URMg3t8a/bQ==
 
+deep-object-diff@^1.1.9:
+  version "1.1.9"
+  resolved "https://registry.yarnpkg.com/deep-object-diff/-/deep-object-diff-1.1.9.tgz#6df7ef035ad6a0caa44479c536ed7b02570f4595"
+  integrity sha512-Rn+RuwkmkDwCi2/oXOFS9Gsr5lJZu/yTGpK7wAaAIE75CC+LCGEZHpY6VQJa/RoJcrmaA/docWJZvYohlNkWPA==
+
 deferred-leveldown@~5.3.0:
   version "5.3.0"
   resolved "https://registry.yarnpkg.com/deferred-leveldown/-/deferred-leveldown-5.3.0.tgz#27a997ad95408b61161aa69bd489b86c71b78058"
@@ -2658,10 +2658,10 @@ delayed-stream@~1.0.0:
   resolved "https://registry.yarnpkg.com/delayed-stream/-/delayed-stream-1.0.0.tgz#df3ae199acadfb7d440aaae0b29e2272b24ec619"
   integrity sha512-ZySD7Nf91aLB0RxL4KGrKHBXl7Eds1DAmEdcoVawXnLD7SDhpNgtuII2aAkg7a7QS41jxPSZ17p4VdGnMHk3MQ==
 
-deno-bin@^1.28.1:
-  version "1.31.2"
-  resolved "https://registry.yarnpkg.com/deno-bin/-/deno-bin-1.31.2.tgz#4003fb3432ded2d7afe25c6fb63f3b9a100ffd2a"
-  integrity sha512-Z8UGPTDe36qcfJk0N4I13rCEJbBlxFJY5vlBAqua4GRDObk15hbqttrKxBmyXYzwn5DhNNaVDDBI30hwwNROAQ==
+deno-bin@1.36.0, deno-bin@^1.36.0:
+  version "1.36.0"
+  resolved "https://registry.yarnpkg.com/deno-bin/-/deno-bin-1.36.0.tgz#35f61891438ef5d012dde04fc342032ecc9c56f7"
+  integrity sha512-gJlrpILuliLlBTxM1Fo/304KI2lU/Nr/g0KZw6T7xhfG01BKTwUA+1amTg/m+8/4y2QnKwQC5tdHSuA9UllJJw==
   dependencies:
     adm-zip "^0.5.4"
     follow-redirects "^1.10.0"
@@ -3124,7 +3124,7 @@ ethereumjs-util@^7.1.1, ethereumjs-util@^7.1.3, ethereumjs-util@^7.1.4, ethereum
     ethereum-cryptography "^0.1.3"
     rlp "^2.2.4"
 
-ethers@5.7.2, ethers@^5.5.2, ethers@^5.5.3, ethers@^5.7.1:
+ethers@5.7.2, ethers@^5.5.2, ethers@^5.5.3:
   version "5.7.2"
   resolved "https://registry.yarnpkg.com/ethers/-/ethers-5.7.2.tgz#3a7deeabbb8c030d4126b24f84e525466145872e"
   integrity sha512-wswUsmWo1aOK8rR7DIKiWSw9DbLWe6x98Jrn8wcTflTVvaXhAMaB5zGAXy0GYQEQp9iO1iSHWVyARQm11zUtyg==
@@ -4751,11 +4751,6 @@ oauth-sign@~0.9.0:
   version "0.9.0"
   resolved "https://registry.yarnpkg.com/oauth-sign/-/oauth-sign-0.9.0.tgz#47a7b016baa68b5fa0ecf3dee08a85c679ac6455"
   integrity sha512-fexhUFFPTGV8ybAtSIGbV6gOkSv8UtRbDBnAyLQw4QPKkgNlsH2ByPGtMUqdWkos6YCRmAqViwgZrJc/mRDzZQ==
-
-object-hash@^3.0.0:
-  version "3.0.0"
-  resolved "https://registry.yarnpkg.com/object-hash/-/object-hash-3.0.0.tgz#73f97f753e7baffc0e2cc9d6e079079744ac82e9"
-  integrity sha512-RSn9F68PjH9HqtltsSnqYC1XXoWe9Bju5+213R98cNGttag9q9yAOTzdbsqvIa7aNm5WffBZFpWYr2aWrklWAw==
 
 object-inspect@^1.12.2, object-inspect@^1.9.0:
   version "1.12.3"

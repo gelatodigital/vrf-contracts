@@ -60,11 +60,14 @@
   },
   "dependencies": {
     "@chainlink/contracts": "^0.6.1",
-    "@gelatonetwork/automate-sdk": "^2.7.0-beta",
-    "@gelatonetwork/web3-functions-sdk": "^2.0.3",
+    "@gelatonetwork/automate-sdk": "^2.19.2-beta",
+    "@gelatonetwork/web3-functions-sdk": "^2.1.7",
     "@openzeppelin/contracts": "4.9.2",
     "@safe-global/safe-singleton-factory": "^1.0.14",
     "drand-client": "^1.2.0",
     "ky": "^0.33.2"
+  },
+  "resolutions": {
+    "deno-bin": "1.36.0"
   }
 }
