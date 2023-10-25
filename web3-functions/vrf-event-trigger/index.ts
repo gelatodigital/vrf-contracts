@@ -1,5 +1,4 @@
-import * as ethers from "ethers";
-import { Contract } from "ethers";
+import { Contract } from "@ethersproject/contracts";
 
 import {
   Web3Function,
@@ -7,6 +6,7 @@ import {
 } from "@gelatonetwork/web3-functions-sdk";
 
 import { getNextRandomness } from "../../src/drand_util";
+import { generatePRN } from "../../src/prn";
 
 // contract abis
 const CONSUMER_ABI = [
@@ -23,12 +23,12 @@ Web3Function.onRun(async (context: Web3FunctionEventContext) => {
   const consumer = new Contract(consumerAddress, CONSUMER_ABI, provider);
 
   const randomness = await getNextRandomness();
-  const encodedRandomness = ethers.BigNumber.from(`0x${randomness}`);
+  const prn = generatePRN(randomness, log);
 
   const event = consumer.interface.parseLog(log);
   const [consumerData] = event.args;
   const data = consumer.interface.encodeFunctionData("fulfillRandomness", [
-    encodedRandomness,
+    prn,
     consumerData,
   ]);
 
