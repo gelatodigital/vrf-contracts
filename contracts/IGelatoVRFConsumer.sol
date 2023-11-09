@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.18;
 
-/// @title GelatoVRFConsumer
+/// @title IGelatoVRFConsumer
 /// @dev Interface for consuming random number provided by Drand.
 /// @notice This interface allows contracts to receive a random number provided by Gelato VRF.
-interface GelatoVRFConsumer {
+interface IGelatoVRFConsumer {
     /// @notice Event emitted when a randomness request is made.
     /// @param data Additional data associated with the request.
     event RequestedRandomness(bytes data);
