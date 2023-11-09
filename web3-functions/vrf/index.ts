@@ -1,5 +1,5 @@
-import * as ethers from "ethers";
 import { Log } from "@ethersproject/providers";
+import * as ethers from "ethers";
 import { Contract } from "ethers";
 
 import {
@@ -26,7 +26,7 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
 
   const provider = multiChainProvider.default();
 
-  const consumerAddress = userArgs.consumerAddress as string[];
+  const consumerAddress = userArgs.consumerAddress as string;
   const consumer = new Contract(consumerAddress, CONSUMER_ABI, provider);
 
   const currentBlock = await provider.getBlockNumber();
