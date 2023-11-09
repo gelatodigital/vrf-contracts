@@ -68,11 +68,13 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
 
   // Parse retrieved events
   console.log(`Matched ${logs.length} new events`);
-  const randomness = await getNextRandomness();
-  const encodedRandomness = ethers.BigNumber.from(`0x${randomness}`);
   for (const log of logs) {
     const event = consumer.interface.parseLog(log);
     const [data] = event.args;
+    const { timestamp } = await provider.getBlock(log.blockHash);
+    const randomness = await getNextRandomness(timestamp);
+    const encodedRandomness = ethers.BigNumber.from(`0x${randomness}`);
+
     callData.push({
       to: consumerAddress,
       data: consumer.interface.encodeFunctionData("fulfillRandomness", [

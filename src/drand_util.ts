@@ -1,10 +1,10 @@
 import shuffle from "lodash/shuffle";
 
 import {
-  fetchBeacon,
-  HttpChainClient,
-  HttpCachingChain,
   ChainOptions,
+  HttpCachingChain,
+  HttpChainClient,
+  fetchBeacon,
   roundAt,
   roundTime,
 } from "drand-client";
@@ -55,10 +55,12 @@ async function fetchDrandResponse(round?: number) {
   throw errors.pop();
 }
 
-export async function getNextRandomness() {
-  const now = Date.now();
-  const nextRound = roundAt(now, quicknet) + 1;
-  await sleep(roundTime(quicknet, nextRound) - now);
+export async function getNextRandomness(timestampInSec: number) {
+  const requestTime = timestampInSec * 1000;
+  const nextRound = roundAt(requestTime, quicknet) + 1;
+  if (roundTime(quicknet, nextRound) > requestTime) {
+    await sleep(roundTime(quicknet, nextRound) - requestTime);
+  }
   const { round, randomness } = await fetchDrandResponse(nextRound);
   console.log(`Fulfilling from round ${round}`);
   return randomness;
