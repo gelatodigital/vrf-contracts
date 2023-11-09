@@ -45,7 +45,7 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
   while (lastBlock < currentBlock && nbRequests < MAX_REQUESTS) {
     nbRequests++;
     const fromBlock = lastBlock + 1;
-    const toBlock = Math.min(fromBlock + MAX_RANGE, currentBlock);
+    const toBlock = Math.min(lastBlock + MAX_RANGE, currentBlock);
     try {
       const eventFilter = {
         address: consumer.address,
