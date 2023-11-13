@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.18;
 
-import {GelatoVRFConsumerBase} from "./GelatoVRFConsumerBase.sol";
+import {GelatoVRFConsumerBase} from "../GelatoVRFConsumerBase.sol";
 
 contract MockVRFConsumerBase is GelatoVRFConsumerBase {
     uint256 public latestRandomness;
