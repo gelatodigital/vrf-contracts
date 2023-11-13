@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.18;
 
-import {GelatoVRFConsumer} from "contracts/GelatoVRFConsumer.sol";
+import {IGelatoVRFConsumer} from "contracts/IGelatoVRFConsumer.sol";
 
 /// @title GelatoVRFConsumerBase
 /// @dev This contract handles domain separation between consecutive randomness requests
@@ -10,7 +10,7 @@ import {GelatoVRFConsumer} from "contracts/GelatoVRFConsumer.sol";
 /// ensuring unique random values.
 /// for different request IDs by hashing them with the random number provided by drand.
 /// For security considerations, refer to the Gelato documentation.
-abstract contract GelatoVRFConsumerBase is GelatoVRFConsumer {
+abstract contract GelatoVRFConsumerBase is IGelatoVRFConsumer {
     bool[] public requestPending;
 
     /// @notice Returns the address of the dedicated msg.sender.
