@@ -17,13 +17,15 @@ contract VRFCoordinatorV2AdapterFactory {
     /// @notice Create a new instance of VRFCoordinatorV2Adapter.
     /// @dev Creates a new VRFCoordinatorV2Adapter contract with the provided operator address.
     /// @param operator The address of the operator that will interact with the adapter.
+    /// @param requesters The addresses that are able to request for randomness.
     /// @return adapter The newly created VRFCoordinatorV2Adapter instance.
     function make(
-        address operator
+        address operator,
+        address[] memory requesters
     ) external returns (VRFCoordinatorV2Adapter adapter) {
         if (adapterRegistry[msg.sender] != address(0))
             return VRFCoordinatorV2Adapter(adapterRegistry[msg.sender]);
-        adapter = new VRFCoordinatorV2Adapter(operator);
+        adapter = new VRFCoordinatorV2Adapter(msg.sender, operator, requesters);
         adapterRegistry[msg.sender] = address(adapter);
         emit AdapterCreated(msg.sender, address(adapter));
     }

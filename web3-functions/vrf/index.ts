@@ -1,5 +1,5 @@
-import * as ethers from "ethers";
 import { Log } from "@ethersproject/providers";
+import * as ethers from "ethers";
 import { Contract } from "ethers";
 
 import {
@@ -26,7 +26,7 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
 
   const provider = multiChainProvider.default();
 
-  const consumerAddress = userArgs.consumerAddress as string[];
+  const consumerAddress = userArgs.consumerAddress as string;
   const consumer = new Contract(consumerAddress, CONSUMER_ABI, provider);
 
   const currentBlock = await provider.getBlockNumber();
@@ -45,7 +45,7 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
   while (lastBlock < currentBlock && nbRequests < MAX_REQUESTS) {
     nbRequests++;
     const fromBlock = lastBlock + 1;
-    const toBlock = Math.min(fromBlock + MAX_RANGE, currentBlock);
+    const toBlock = Math.min(lastBlock + MAX_RANGE, currentBlock);
     try {
       const eventFilter = {
         address: consumer.address,
@@ -68,11 +68,13 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
 
   // Parse retrieved events
   console.log(`Matched ${logs.length} new events`);
-  const randomness = await getNextRandomness();
-  const encodedRandomness = ethers.BigNumber.from(`0x${randomness}`);
   for (const log of logs) {
     const event = consumer.interface.parseLog(log);
     const [data] = event.args;
+    const { timestamp } = await provider.getBlock(log.blockHash);
+    const randomness = await getNextRandomness(timestamp);
+    const encodedRandomness = ethers.BigNumber.from(`0x${randomness}`);
+
     callData.push({
       to: consumerAddress,
       data: consumer.interface.encodeFunctionData("fulfillRandomness", [

@@ -14,14 +14,45 @@ contract VRFCoordinatorV2Adapter is
     VRFCoordinatorV2Stub,
     GelatoVRFConsumerBase
 {
+    /// @dev Emitted when msg.sender is not deployer.
+    error OnlyDeployer();
+    /// @dev Emitted when msg.sender is not authorized requester.
+    error UnauthorizedRequester();
     /// @dev Emitted when an attempt is made to request randomness with zero minimum confirmations.
     error ZeroConfirmationsRequested();
 
+    /// @notice Event emitted when the permissions for requesters are updated.
+    /// @param requesters Array of addresses whose permissions for request creation were updated.
+    /// @param canRequest New permission state; true allows, false disallows request creation.
+    event RequesterPermissionsUpdated(address[] requesters, bool canRequest);
+
+    address private immutable _deployer;
     address private immutable _operatorAddr;
 
-    /// @dev Constructor to initialize the operator address.
-    constructor(address operator) {
+    mapping(address => bool) public canRequest;
+
+    modifier onlyDeployer() {
+        if (msg.sender != _deployer) {
+            revert OnlyDeployer();
+        }
+        _;
+    }
+
+    modifier onlyAuthorizedRequester() {
+        if (!canRequest[msg.sender]) {
+            revert UnauthorizedRequester();
+        }
+        _;
+    }
+
+    constructor(
+        address deployer,
+        address operator,
+        address[] memory requesters
+    ) {
+        _deployer = deployer;
         _operatorAddr = operator;
+        _updateRequesterPermissions(requesters, true);
     }
 
     function _operator() internal view override returns (address) {
@@ -38,7 +69,7 @@ contract VRFCoordinatorV2Adapter is
         uint16 minimumRequestConfirmations,
         uint32 /*callbackGasLimit*/,
         uint32 numWords
-    ) external override returns (uint256 requestId) {
+    ) external override onlyAuthorizedRequester returns (uint256 requestId) {
         return
             _requestRandomWords(
                 minimumRequestConfirmations,
@@ -59,13 +90,23 @@ contract VRFCoordinatorV2Adapter is
         uint32 /*callbackGasLimit*/,
         uint32 numWords,
         VRFConsumerBaseV2 consumer
-    ) external returns (uint256 requestId) {
+    ) external onlyAuthorizedRequester returns (uint256 requestId) {
         return
             _requestRandomWords(
                 minimumRequestConfirmations,
                 numWords,
                 consumer
             );
+    }
+
+    /// @notice External function to add or remove addresses that can create requests.
+    /// @param requesters Array of addresses whose permissions for request creation will be updated.
+    /// @param newCanRequest True to allow, false to disallow request creation for the addresses.
+    function updateRequesterPermissions(
+        address[] memory requesters,
+        bool newCanRequest
+    ) external onlyDeployer {
+        _updateRequesterPermissions(requesters, newCanRequest);
     }
 
     /// @notice Internal function to request VRF randomness and emit the request event.
@@ -105,5 +146,21 @@ contract VRFCoordinatorV2Adapter is
             words[i] = uint(keccak256(abi.encode(randomness, i)));
         }
         consumer.rawFulfillRandomWords(requestId, words);
+    }
+
+    /// @notice Internal function to add or remove addresses that can create requests.
+    /// @param requesters Array of addresses whose permissions for request creation will be updated.
+    /// @param newCanRequest True to allow, false to disallow request creation for the addresses.
+    function _updateRequesterPermissions(
+        address[] memory requesters,
+        bool newCanRequest
+    ) private {
+        if (requesters.length > 0) {
+            for (uint256 i; i < requesters.length; i++) {
+                canRequest[requesters[i]] = newCanRequest;
+            }
+
+            emit RequesterPermissionsUpdated(requesters, newCanRequest);
+        }
     }
 }
