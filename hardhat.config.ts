@@ -2,13 +2,13 @@ import { HardhatUserConfig } from "hardhat/config";
 
 // PLUGINS
 import "@gelatonetwork/web3-functions-sdk/hardhat-plugin";
-import "@typechain/hardhat";
-import "@nomiclabs/hardhat-ethers";
-import "@nomiclabs/hardhat-waffle";
-import "hardhat-deploy";
 import "@matterlabs/hardhat-zksync-solc";
 import "@matterlabs/hardhat-zksync-verify";
+import "@nomiclabs/hardhat-ethers";
+import "@nomiclabs/hardhat-waffle";
 import { getSingletonFactoryInfo } from "@safe-global/safe-singleton-factory";
+import "@typechain/hardhat";
+import "hardhat-deploy";
 
 // ================================= TASKS =========================================
 
@@ -17,8 +17,8 @@ import * as dotenv from "dotenv";
 dotenv.config({ path: __dirname + "/.env" });
 
 // Libraries
-import assert from "assert";
 import { BigNumber } from "@ethersproject/bignumber";
+import assert from "assert";
 
 // Process Env Variables
 const ALCHEMY_ID = process.env.ALCHEMY_ID;
@@ -53,7 +53,7 @@ const config: HardhatUserConfig = {
   w3f: {
     rootDir: "./web3-functions",
     debug: false,
-    networks: ["mumbai", "goerli", "baseGoerli"], //(multiChainProvider) injects provider for these networks
+    networks: ["polygon", "mumbai", "goerli", "baseGoerli"], //(multiChainProvider) injects provider for these networks
   },
 
   namedAccounts: {

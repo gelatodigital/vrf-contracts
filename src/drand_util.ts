@@ -23,32 +23,45 @@ async function sleep(duration: number) {
   await new Promise((resolve) => setTimeout(resolve, duration));
 }
 
-async function fetchDrandResponse(round?: number) {
-  // sequentially try different endpoints, in shuffled order for load-balancing
-  const urls = shuffle([
-    // Protocol labs endpoints
-    "https://api.drand.sh",
-    "https://api2.drand.sh",
-    "https://api3.drand.sh",
-    // Cloudflare
-    "https://drand.cloudflare.com",
-    // Storswift
-    "https://api.drand.secureweb3.com:6875",
-  ]);
+class HttpChainClientCache {
+  #chainClients: HttpChainClient[] = [];
 
+  constructor(urls: string[]) {
+    urls.forEach((url) => {
+      const chain = new HttpCachingChain(
+        `${url}/${quicknet.hash}`,
+        DRAND_OPTIONS
+      );
+      const client = new HttpChainClient(chain, DRAND_OPTIONS);
+      this.#chainClients.push(client);
+    });
+  }
+
+  getClients() {
+    return shuffle([...this.#chainClients]);
+  }
+}
+
+const clientCache = new HttpChainClientCache([
+  // Protocol labs endpoints
+  "https://api.drand.sh",
+  "https://api2.drand.sh",
+  "https://api3.drand.sh",
+  // Cloudflare
+  "https://drand.cloudflare.com",
+  // Storswift
+  "https://api.drand.secureweb3.com:6875",
+]);
+
+async function fetchDrandResponse(round: number) {
   console.log("Fetching randomness");
-  const errors: Error[] = [];
-  for (const url of urls) {
-    console.log(`Trying ${url}...`);
-    const chain = new HttpCachingChain(
-      `${url}/${quicknet.hash}`,
-      DRAND_OPTIONS
-    );
-    const client = new HttpChainClient(chain, DRAND_OPTIONS);
+  const errors = [];
+
+  for (const client of clientCache.getClients()) {
     try {
       return await fetchBeacon(client, round);
     } catch (err) {
-      errors.push(err as Error);
+      errors.push(err);
     }
   }
   throw errors.pop();
