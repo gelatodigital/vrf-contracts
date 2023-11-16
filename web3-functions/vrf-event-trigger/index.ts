@@ -28,9 +28,15 @@ Web3Function.onRun(async (context: Web3FunctionEventContext) => {
 
   const event = consumer.interface.parseLog(log);
   const [consumerData] = event.args;
+
+  const consumerDataWithTimestamp = ethers.utils.defaultAbiCoder.encode(
+    ["bytes", "uint256"],
+    [consumerData, timestamp]
+  );
+
   const data = consumer.interface.encodeFunctionData("fulfillRandomness", [
     encodedRandomness,
-    consumerData,
+    consumerDataWithTimestamp,
   ]);
 
   return {
