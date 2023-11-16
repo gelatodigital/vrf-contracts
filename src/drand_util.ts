@@ -78,7 +78,7 @@ export async function getNextRandomness(requestTimeInSec: number) {
       return randomness;
     } catch (e) {
       console.log("Failed to fetch randomness", e);
-      await sleep(1000);
+      await sleep(500);
     }
   }
 }
