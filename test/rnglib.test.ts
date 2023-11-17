@@ -1,7 +1,7 @@
-import hre from "hardhat";
 import { expect } from "chai";
+import hre from "hardhat";
 import { RNGLibTestHarness } from "../typechain";
-const { ethers } = hre;
+const { ethers, deployments } = hre;
 
 describe("RNGLib", function () {
   // Contracts
@@ -17,7 +17,7 @@ describe("RNGLib", function () {
 
     // Solidity contracts
     const factory = await ethers.getContractFactory("RNGLibTestHarness");
-    harness = await factory.deploy();
+    harness = (await factory.deploy()) as RNGLibTestHarness;
   });
 
   it("returns distinct consecutive random numbers", async () => {

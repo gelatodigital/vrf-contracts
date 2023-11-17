@@ -1,20 +1,23 @@
-import hre from "hardhat";
-import { assert, expect } from "chai";
-import { Web3FunctionHardhat } from "@gelatonetwork/web3-functions-sdk/hardhat-plugin";
-import { ContractFactory } from "ethers";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { MockVRFConsumerBase } from "../typechain";
 import { Web3FunctionUserArgs } from "@gelatonetwork/automate-sdk";
-import { Web3FunctionResultV2 } from "@gelatonetwork/web3-functions-sdk/*";
-const { deployments, w3f, ethers } = hre;
+import { Web3FunctionResultV2 } from "@gelatonetwork/web3-functions-sdk";
+import { Web3FunctionHardhat } from "@gelatonetwork/web3-functions-sdk/hardhat-plugin";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { assert, expect } from "chai";
 import {
   ChainOptions,
-  fetchBeacon,
   HttpCachingChain,
   HttpChainClient,
+  fetchBeacon,
   roundAt,
 } from "drand-client";
+import { ContractFactory } from "ethers";
+import hre from "hardhat";
 import { quicknet } from "../src/drand_info";
+import { MockVRFConsumerBase } from "../typechain";
+const { deployments, w3f, ethers } = hre;
+
+import fetch from "node-fetch";
+global.fetch = fetch;
 
 const DRAND_OPTIONS: ChainOptions = {
   disableBeaconVerification: false,
@@ -54,7 +57,7 @@ describe("ConsumerBase Test Suite", function () {
 
     // Solidity contracts
     mockConsumerFactory = await ethers.getContractFactory(
-      "contracts/MockVRFConsumerBase.sol:MockVRFConsumerBase"
+      "contracts/mocks/MockVRFConsumerBase.sol:MockVRFConsumerBase"
     );
 
     // Drand testing client
@@ -72,11 +75,12 @@ describe("ConsumerBase Test Suite", function () {
     userArgs = { consumerAddress: mockConsumer.address };
   });
 
-  const data = []; // TODO; test data
   it("Stores the latest round in the mock consumer", async () => {
     for (let i = 0; i < 2; i++) {
+      const expectedExtraData = "0x12345678";
+
       const requestId = i;
-      await mockConsumer.connect(user).requestRandomness(data);
+      await mockConsumer.connect(user).requestRandomness(expectedExtraData);
 
       const exec = await vrf.run({ userArgs });
       const res = exec.result as Web3FunctionResultV2;
@@ -92,18 +96,22 @@ describe("ConsumerBase Test Suite", function () {
 
       const abi = ethers.utils.defaultAbiCoder;
       expect(await mockConsumer.latestRandomness()).to.equal(
-        ethers.utils.keccak256(
-          abi.encode(
-            ["uint256", "address", "uint256", "uint256"],
-            [
-              ethers.BigNumber.from(`0x${randomness}`),
-              mockConsumer.address,
-              (await ethers.provider.getNetwork()).chainId,
-              requestId,
-            ]
+        ethers.BigNumber.from(
+          ethers.utils.keccak256(
+            abi.encode(
+              ["uint256", "address", "uint256", "uint64"],
+              [
+                ethers.BigNumber.from(`0x${randomness}`),
+                mockConsumer.address,
+                (await ethers.provider.getNetwork()).chainId,
+                requestId,
+              ]
+            )
           )
         )
       );
+
+      expect(await mockConsumer.latestExtraData()).to.equal(expectedExtraData);
     }
   });
 

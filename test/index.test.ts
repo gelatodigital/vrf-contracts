@@ -1,20 +1,23 @@
-import hre from "hardhat";
-import { assert, expect } from "chai";
-import { Web3FunctionHardhat } from "@gelatonetwork/web3-functions-sdk/hardhat-plugin";
-import { ContractFactory } from "ethers";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { MockVRFConsumer } from "../typechain";
 import { Web3FunctionUserArgs } from "@gelatonetwork/automate-sdk";
 import { Web3FunctionResultV2 } from "@gelatonetwork/web3-functions-sdk/*";
-const { deployments, w3f, ethers } = hre;
+import { Web3FunctionHardhat } from "@gelatonetwork/web3-functions-sdk/hardhat-plugin";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { assert, expect } from "chai";
 import {
   ChainOptions,
-  fetchBeacon,
   HttpCachingChain,
   HttpChainClient,
+  fetchBeacon,
   roundAt,
 } from "drand-client";
+import { ContractFactory } from "ethers";
+import hre from "hardhat";
 import { quicknet } from "../src/drand_info";
+import { MockVRFConsumer } from "../typechain/contracts/mocks/MockVRFConsumer";
+const { deployments, w3f, ethers } = hre;
+
+import fetch from "node-fetch";
+global.fetch = fetch;
 
 const DRAND_OPTIONS: ChainOptions = {
   disableBeaconVerification: false,
@@ -54,7 +57,7 @@ describe("VRF Test Suite", function () {
 
     // Solidity contracts
     mockConsumerFactory = await ethers.getContractFactory(
-      "contracts/MockVRFConsumer.sol:MockVRFConsumer"
+      "contracts/mocks/MockVRFConsumer.sol:MockVRFConsumer"
     );
 
     // Drand testing client
