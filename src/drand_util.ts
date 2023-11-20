@@ -53,6 +53,22 @@ const clientCache = new HttpChainClientCache([
   "https://api.drand.secureweb3.com:6875",
 ]);
 
+const randomnessOfRoundCache: Map<number, string> = new Map();
+
+async function fetchDrandResponseWithCaching(round: number) {
+  let randomness = randomnessOfRoundCache.get(round);
+
+  if (!randomness) {
+    const response = await fetchDrandResponse(round);
+    randomness = response.randomness;
+    randomnessOfRoundCache.set(response.round, randomness);
+
+    return { round: response.round, randomness };
+  }
+
+  return { round, randomness };
+}
+
 async function fetchDrandResponse(round: number) {
   console.log("Fetching randomness");
   const errors = [];
@@ -73,7 +89,9 @@ export async function getNextRandomness(requestTimeInSec: number) {
   // eslint-disable-next-line no-constant-condition
   while (true) {
     try {
-      const { round, randomness } = await fetchDrandResponse(nextRound);
+      const { round, randomness } = await fetchDrandResponseWithCaching(
+        nextRound
+      );
       console.log(`Fulfilling from round ${round}`);
       return randomness;
     } catch (e) {
