@@ -21,11 +21,17 @@ contract VRFCoordinatorV2AdapterFactory {
     /// @return adapter The newly created VRFCoordinatorV2Adapter instance.
     function make(
         address operator,
-        address[] memory requesters
+        address[] memory requesters,
+        uint256 roundsToFulfill
     ) external returns (VRFCoordinatorV2Adapter adapter) {
         if (adapterRegistry[msg.sender] != address(0))
             return VRFCoordinatorV2Adapter(adapterRegistry[msg.sender]);
-        adapter = new VRFCoordinatorV2Adapter(msg.sender, operator, requesters);
+        adapter = new VRFCoordinatorV2Adapter(
+            msg.sender,
+            operator,
+            requesters,
+            roundsToFulfill
+        );
         adapterRegistry[msg.sender] = address(adapter);
         emit AdapterCreated(msg.sender, address(adapter));
     }

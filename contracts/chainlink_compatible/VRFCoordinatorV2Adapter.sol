@@ -28,6 +28,7 @@ contract VRFCoordinatorV2Adapter is
 
     address private immutable _deployer;
     address private immutable _operatorAddr;
+    uint256 private immutable _nrRoundsToFulfill;
 
     mapping(address => bool) public canRequest;
 
@@ -48,15 +49,21 @@ contract VRFCoordinatorV2Adapter is
     constructor(
         address deployer,
         address operator,
-        address[] memory requesters
+        address[] memory requesters,
+        uint256 nrRoundsToFulfill
     ) {
         _deployer = deployer;
         _operatorAddr = operator;
         _updateRequesterPermissions(requesters, true);
+        _nrRoundsToFulfill = nrRoundsToFulfill;
     }
 
     function _operator() internal view override returns (address) {
         return _operatorAddr;
+    }
+
+    function _roundsToFulfill() internal view override returns (uint256) {
+        return _nrRoundsToFulfill;
     }
 
     /// @notice Request VRF randomness using Chainlink's VRF Coordinator V2.

@@ -17,6 +17,10 @@ contract MockVRFConsumerBase is GelatoVRFConsumerBase {
         return _operatorAddr;
     }
 
+    function _roundsToFulfill() internal pure override returns (uint256) {
+        return 4;
+    }
+
     function requestRandomness(bytes memory data) external returns (uint256) {
         return _requestRandomness(data);
     }

@@ -16,6 +16,7 @@ import { quicknet } from "../src/drand_info";
 import { MockVRFConsumerBase } from "../typechain";
 const { deployments, w3f, ethers } = hre;
 
+import { sleep } from "drand-client/util";
 import fetch from "node-fetch";
 global.fetch = fetch;
 
@@ -113,6 +114,38 @@ describe("ConsumerBase Test Suite", function () {
 
       expect(await mockConsumer.latestExtraData()).to.equal(expectedExtraData);
     }
+  });
+
+  it("Doesnt store the last round after round elapsed", async () => {
+    const roundsToFulfill = 2;
+    const expectedExtraData = "0x12345678";
+
+    await mockConsumer.connect(user).requestRandomness(expectedExtraData);
+    const lastRequestId = await mockConsumer.latestRequestId();
+    const requestDeadline = await mockConsumer.requestDeadline(lastRequestId);
+
+    // catch up to block time (block time is faster than Date.now() in tests)
+    const blockTimeNow =
+      (await ethers.provider.getBlock("latest")).timestamp * 1000;
+    await sleep(blockTimeNow - Date.now());
+
+    const exec = await vrf.run({ userArgs });
+    const res = exec.result as Web3FunctionResultV2;
+
+    if (!res.canExec) assert.fail(res.message);
+
+    // wait until past deadline
+    await sleep((roundsToFulfill + 3) * quicknet.period * 1000);
+
+    const round = roundAt(Date.now(), quicknet);
+    expect(round).to.be.gt(requestDeadline);
+
+    const callData = res.callData[0];
+    await dedicatedMsgSender.sendTransaction(callData);
+
+    const latestRequestId = await mockConsumer.latestRequestId();
+
+    expect(latestRequestId).to.equal(lastRequestId);
   });
 
   it("Doesn't execute if no event was emitted", async () => {
