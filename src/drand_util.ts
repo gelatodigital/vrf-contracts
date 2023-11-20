@@ -12,7 +12,7 @@ import { quicknet } from "./drand_info";
 
 const DRAND_OPTIONS: ChainOptions = {
   disableBeaconVerification: false,
-  noCache: false,
+  noCache: true,
   chainVerificationParams: {
     chainHash: quicknet.hash,
     publicKey: quicknet.public_key,
