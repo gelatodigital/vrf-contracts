@@ -53,6 +53,7 @@ abstract contract GelatoVRFConsumerBase is IGelatoVRFConsumer {
 
         bytes memory data = abi.encode(requestId, extraData);
 
+        // solhint-disable-next-line not-rely-on-time
         bytes memory dataWithTimestamp = abi.encode(data, block.timestamp);
         bytes32 requestHash = keccak256(dataWithTimestamp);
         requestedHash[requestId] = requestHash;
