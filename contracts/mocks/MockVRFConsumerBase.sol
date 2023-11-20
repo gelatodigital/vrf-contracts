@@ -5,7 +5,7 @@ import {GelatoVRFConsumerBase} from "../GelatoVRFConsumerBase.sol";
 
 contract MockVRFConsumerBase is GelatoVRFConsumerBase {
     uint256 public latestRandomness;
-    uint64 public latestRequestId;
+    uint256 public latestRequestId;
     bytes public latestExtraData;
     address private immutable _operatorAddr;
 
@@ -17,13 +17,13 @@ contract MockVRFConsumerBase is GelatoVRFConsumerBase {
         return _operatorAddr;
     }
 
-    function requestRandomness(bytes memory data) external returns (uint64) {
+    function requestRandomness(bytes memory data) external returns (uint256) {
         return _requestRandomness(data);
     }
 
     function _fulfillRandomness(
         uint256 randomness,
-        uint64 requestId,
+        uint256 requestId,
         bytes memory extraData
     ) internal override {
         latestRandomness = randomness;

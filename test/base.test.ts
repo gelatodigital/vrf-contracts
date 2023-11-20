@@ -99,7 +99,7 @@ describe("ConsumerBase Test Suite", function () {
         ethers.BigNumber.from(
           ethers.utils.keccak256(
             abi.encode(
-              ["uint256", "address", "uint256", "uint64"],
+              ["uint256", "address", "uint256", "uint256"],
               [
                 ethers.BigNumber.from(`0x${randomness}`),
                 mockConsumer.address,

@@ -12,7 +12,7 @@ import {IGelatoVRFConsumer} from "contracts/IGelatoVRFConsumer.sol";
 /// For security considerations, refer to the Gelato documentation.
 abstract contract GelatoVRFConsumerBase is IGelatoVRFConsumer {
     bool[] public requestPending;
-    mapping(uint64 requestId => bytes32 requestHash) public requestedHash;
+    mapping(uint256 requestId => bytes32 requestHash) public requestedHash;
 
     /// @notice Returns the address of the dedicated msg.sender.
     /// @dev The operator can be found on the Gelato dashboard after a VRF is deployed.
@@ -27,8 +27,8 @@ abstract contract GelatoVRFConsumerBase is IGelatoVRFConsumer {
     /// @return requestId The ID for the randomness request.
     function _requestRandomness(
         bytes memory extraData
-    ) internal returns (uint64 requestId) {
-        requestId = uint64(requestPending.length);
+    ) internal returns (uint256 requestId) {
+        requestId = uint256(requestPending.length);
         requestPending.push();
         requestPending[requestId] = true;
 
@@ -48,7 +48,7 @@ abstract contract GelatoVRFConsumerBase is IGelatoVRFConsumer {
     /// @param extraData Additional data from the randomness request.
     function _fulfillRandomness(
         uint256 randomness,
-        uint64 requestId,
+        uint256 requestId,
         bytes memory extraData
     ) internal virtual;
 
@@ -63,9 +63,9 @@ abstract contract GelatoVRFConsumerBase is IGelatoVRFConsumer {
         require(msg.sender == _operator(), "only operator");
 
         (bytes memory data, ) = abi.decode(dataWithTimestamp, (bytes, uint256));
-        (uint64 requestId, bytes memory extraData) = abi.decode(
+        (uint256 requestId, bytes memory extraData) = abi.decode(
             data,
-            (uint64, bytes)
+            (uint256, bytes)
         );
 
         bytes32 requestHash = keccak256(dataWithTimestamp);

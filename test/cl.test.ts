@@ -106,7 +106,7 @@ describe("Chainlink Adapter Test Suite", function () {
     const abi = ethers.utils.defaultAbiCoder;
     const seed = ethers.utils.keccak256(
       abi.encode(
-        ["uint256", "address", "uint256", "uint64"],
+        ["uint256", "address", "uint256", "uint256"],
         [
           ethers.BigNumber.from(`0x${randomness}`),
           adapter.address,
