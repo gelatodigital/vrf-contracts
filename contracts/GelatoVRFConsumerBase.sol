@@ -23,7 +23,7 @@ abstract contract GelatoVRFConsumerBase is IGelatoVRFConsumer {
     function _operator() internal view virtual returns (address);
 
     /// @notice Returns the number of rounds where randomness is expected to be fulfilled.
-    /// @dev Rounds of >4 (12 seconds) is recommended to avoid unsuccessful fulfilment.
+    /// @dev Rounds of >=4 (12 seconds) is recommended to avoid unsuccessful fulfilment.
     /// @return uint256 The number of rounds necessary for randomness fulfilment.
     function _roundsToFulfill() internal view virtual returns (uint256);
 
