@@ -76,12 +76,6 @@ const config: HardhatUserConfig = {
       url: "http://127.0.0.1:8545",
       chainId: 31337,
     },
-    hardhat: {
-      forking: {
-        url: `https://eth-goerli.g.alchemy.com/v2/${ALCHEMY_ID}`,
-        blockNumber: 8664000,
-      },
-    },
 
     // Prod
     avalanche: {

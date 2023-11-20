@@ -1,20 +1,23 @@
-import hre from "hardhat";
-import { assert, expect } from "chai";
-import { Web3FunctionHardhat } from "@gelatonetwork/web3-functions-sdk/hardhat-plugin";
-import { ContractFactory } from "ethers";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { VRFCoordinatorV2Adapter, MockVRFConsumer } from "../typechain";
 import { Web3FunctionUserArgs } from "@gelatonetwork/automate-sdk";
 import { Web3FunctionResultV2 } from "@gelatonetwork/web3-functions-sdk/*";
-const { deployments, w3f, ethers } = hre;
+import { Web3FunctionHardhat } from "@gelatonetwork/web3-functions-sdk/hardhat-plugin";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { assert, expect } from "chai";
 import {
   ChainOptions,
-  fetchBeacon,
   HttpCachingChain,
   HttpChainClient,
+  fetchBeacon,
   roundAt,
 } from "drand-client";
+import { ContractFactory } from "ethers";
+import hre from "hardhat";
 import { quicknet } from "../src/drand_info";
+import { MockVRFConsumer, VRFCoordinatorV2Adapter } from "../typechain";
+const { deployments, w3f, ethers } = hre;
+
+import fetch from "node-fetch";
+global.fetch = fetch;
 
 const DRAND_OPTIONS: ChainOptions = {
   disableBeaconVerification: false,
@@ -56,7 +59,7 @@ describe("Chainlink Adapter Test Suite", function () {
     // Solidity contracts
     adapterFactory = await ethers.getContractFactory("VRFCoordinatorV2Adapter");
     mockConsumerFactory = await ethers.getContractFactory(
-      "contracts/chainlink_compatible/MockVRFConsumer.sol:MockVRFConsumer"
+      "contracts/chainlink_compatible/mocks/MockVRFConsumer.sol:MockVRFConsumer"
     );
 
     // Drand testing client
@@ -71,11 +74,15 @@ describe("Chainlink Adapter Test Suite", function () {
     const operator = deployer.address;
     adapter = (await adapterFactory
       .connect(deployer)
-      .deploy(operator)) as VRFCoordinatorV2Adapter;
+      .deploy(operator, operator, [])) as VRFCoordinatorV2Adapter;
     mockConsumer = (await mockConsumerFactory
       .connect(deployer)
       .deploy(adapter.address)) as MockVRFConsumer;
     userArgs = { consumerAddress: adapter.address };
+
+    await adapter
+      .connect(deployer)
+      .updateRequesterPermissions([mockConsumer.address], true);
   });
 
   it("Stores the latest round in the mock consumer", async () => {
@@ -99,7 +106,7 @@ describe("Chainlink Adapter Test Suite", function () {
     const abi = ethers.utils.defaultAbiCoder;
     const seed = ethers.utils.keccak256(
       abi.encode(
-        ["uint256", "address", "uint256", "uint256"],
+        ["uint256", "address", "uint256", "uint64"],
         [
           ethers.BigNumber.from(`0x${randomness}`),
           adapter.address,

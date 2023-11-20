@@ -6,6 +6,7 @@ import {GelatoVRFConsumerBase} from "../GelatoVRFConsumerBase.sol";
 contract MockVRFConsumerBase is GelatoVRFConsumerBase {
     uint256 public latestRandomness;
     uint64 public latestRequestId;
+    bytes public latestExtraData;
     address private immutable _operatorAddr;
 
     constructor(address operator) {
@@ -23,9 +24,10 @@ contract MockVRFConsumerBase is GelatoVRFConsumerBase {
     function _fulfillRandomness(
         uint256 randomness,
         uint64 requestId,
-        bytes memory
+        bytes memory extraData
     ) internal override {
         latestRandomness = randomness;
         latestRequestId = requestId;
+        latestExtraData = extraData;
     }
 }
