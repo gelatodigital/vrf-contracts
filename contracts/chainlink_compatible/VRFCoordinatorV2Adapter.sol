@@ -145,7 +145,9 @@ contract VRFCoordinatorV2Adapter is
         for (uint32 i = 0; i < numWords; i++) {
             words[i] = uint(keccak256(abi.encode(randomness, i)));
         }
-        consumer.rawFulfillRandomWords(requestId, words);
+
+        // solhint-disable-next-line no-empty-blocks
+        try consumer.rawFulfillRandomWords(requestId, words) {} catch {}
     }
 
     /// @notice Internal function to add or remove addresses that can create requests.
