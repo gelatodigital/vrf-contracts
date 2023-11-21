@@ -23,20 +23,20 @@ Web3Function.onRun(async (context: Web3FunctionEventContext) => {
   const consumer = new Contract(consumerAddress, CONSUMER_ABI, provider);
 
   const { timestamp } = await provider.getBlock(log.blockHash);
-  const randomness = await getNextRandomness(timestamp);
+  const { round, randomness } = await getNextRandomness(timestamp);
   const encodedRandomness = ethers.BigNumber.from(`0x${randomness}`);
 
   const event = consumer.interface.parseLog(log);
   const [consumerData] = event.args;
 
-  const consumerDataWithTimestamp = ethers.utils.defaultAbiCoder.encode(
+  const consumerDataWithRound = ethers.utils.defaultAbiCoder.encode(
     ["bytes", "uint256"],
-    [consumerData, timestamp]
+    [consumerData, round]
   );
 
   const data = consumer.interface.encodeFunctionData("fulfillRandomness", [
     encodedRandomness,
-    consumerDataWithTimestamp,
+    consumerDataWithRound,
   ]);
 
   return {

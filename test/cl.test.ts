@@ -16,7 +16,6 @@ import { quicknet } from "../src/drand_info";
 import { MockVRFConsumer, VRFCoordinatorV2Adapter } from "../typechain";
 const { deployments, w3f, ethers } = hre;
 
-import { sleep } from "drand-client/util";
 import fetch from "node-fetch";
 global.fetch = fetch;
 
@@ -73,15 +72,9 @@ describe("Chainlink Adapter Test Suite", function () {
 
   this.beforeEach(async () => {
     const operator = deployer.address;
-    const roundsToFulfill = 4;
     adapter = (await adapterFactory
       .connect(deployer)
-      .deploy(
-        operator,
-        operator,
-        [],
-        roundsToFulfill
-      )) as VRFCoordinatorV2Adapter;
+      .deploy(operator, operator, [])) as VRFCoordinatorV2Adapter;
     mockConsumer = (await mockConsumerFactory
       .connect(deployer)
       .deploy(adapter.address)) as MockVRFConsumer;
@@ -129,54 +122,6 @@ describe("Chainlink Adapter Test Suite", function () {
       const actual = await mockConsumer.randomWordsOf(requestId, i);
       expect(actual._hex).to.equal(expected);
     }
-  });
-
-  it("Doesnt store the last round after round elapsed", async () => {
-    // Deploy adapter with roundsToFulfill = 1
-    const roundsToFulfill = 1;
-    const operator = deployer.address;
-    adapter = (await adapterFactory
-      .connect(deployer)
-      .deploy(
-        operator,
-        operator,
-        [],
-        roundsToFulfill
-      )) as VRFCoordinatorV2Adapter;
-    mockConsumer = (await mockConsumerFactory
-      .connect(deployer)
-      .deploy(adapter.address)) as MockVRFConsumer;
-    userArgs = { consumerAddress: adapter.address };
-    await adapter
-      .connect(deployer)
-      .updateRequesterPermissions([mockConsumer.address], true);
-
-    const numWords = 1;
-
-    await mockConsumer.connect(user).requestRandomWords(numWords);
-    const requestId = await mockConsumer.requestId();
-    const requestDeadline = await adapter.requestDeadline(requestId);
-
-    // catch up to block time (block time is faster than Date.now() in tests)
-    const blockTimeNow =
-      (await ethers.provider.getBlock("latest")).timestamp * 1000;
-    await sleep(blockTimeNow - Date.now());
-
-    const exec = await vrf.run({ userArgs });
-
-    const res = exec.result as Web3FunctionResultV2;
-    if (!res.canExec) assert.fail(res.message);
-
-    // wait until past deadline
-    await sleep((roundsToFulfill + 3) * quicknet.period * 1000);
-
-    const round = roundAt(Date.now(), quicknet);
-    expect(round).to.be.gt(requestDeadline);
-
-    const calldata = res.callData[0];
-    await deployer.sendTransaction({ to: calldata.to, data: calldata.data });
-
-    await expect(mockConsumer.randomWordsOf(requestId, 0)).to.be.reverted;
   });
 
   it("Doesn't execute if no event was emitted", async () => {

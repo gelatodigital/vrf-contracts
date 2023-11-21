@@ -93,7 +93,7 @@ export async function getNextRandomness(requestTimeInSec: number) {
         nextRound
       );
       console.log(`Fulfilling from round ${round}`);
-      return randomness;
+      return { round, randomness };
     } catch (e) {
       console.log("Failed to fetch randomness", e);
       await sleep(500);
