@@ -46,7 +46,7 @@ abstract contract GelatoVRFConsumerBase is IGelatoVRFConsumer {
 
         bytes memory data = abi.encode(requestId, extraData);
 
-        bytes memory dataWithRound = abi.encode(data, _nextRound());
+        bytes memory dataWithRound = abi.encode(data, _round());
         bytes32 requestHash = keccak256(dataWithRound);
 
         requestedHash[requestId] = requestHash;
@@ -92,11 +92,12 @@ abstract contract GelatoVRFConsumerBase is IGelatoVRFConsumer {
         }
     }
 
-    /// @notice Computes and returns the next round number of drand
-    function _nextRound() private view returns (uint256 round) {
+    /// @notice Computes and returns the round number of drand to request randomness from.
+    function _round() private view returns (uint256 round) {
         // solhint-disable-next-line not-rely-on-time
         uint256 elapsedFromGenesis = block.timestamp - _GENESIS;
         uint256 currentRound = (elapsedFromGenesis / _PERIOD) + 1;
-        return currentRound + 1;
+
+        round = block.chainid == 1 ? currentRound + 4 : currentRound + 1;
     }
 }
