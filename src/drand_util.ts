@@ -5,7 +5,6 @@ import {
   HttpCachingChain,
   HttpChainClient,
   fetchBeacon,
-  roundAt,
 } from "drand-client";
 
 import { quicknet } from "./drand_info";
@@ -70,7 +69,7 @@ async function fetchDrandResponseWithCaching(round: number) {
 }
 
 async function fetchDrandResponse(round: number) {
-  console.log("Fetching randomness");
+  console.log("Fetching randomness from round: ", round);
   const errors = [];
 
   for (const client of clientCache.getClients()) {
@@ -83,17 +82,13 @@ async function fetchDrandResponse(round: number) {
   throw errors.pop();
 }
 
-export async function getNextRandomness(requestTimeInSec: number) {
-  const nextRound = roundAt(requestTimeInSec * 1000, quicknet) + 1;
-
+export async function getNextRandomness(chainId: number, round: number) {
   // eslint-disable-next-line no-constant-condition
   while (true) {
     try {
-      const { round, randomness } = await fetchDrandResponseWithCaching(
-        nextRound
-      );
+      const { randomness } = await fetchDrandResponseWithCaching(round);
       console.log(`Fulfilling from round ${round}`);
-      return { round, randomness };
+      return { randomness };
     } catch (e) {
       console.log("Failed to fetch randomness", e);
       await sleep(500);

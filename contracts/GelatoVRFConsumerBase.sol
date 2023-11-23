@@ -45,13 +45,14 @@ abstract contract GelatoVRFConsumerBase is IGelatoVRFConsumer {
         requestPending[requestId] = true;
 
         bytes memory data = abi.encode(requestId, extraData);
+        uint256 round = _round();
 
-        bytes memory dataWithRound = abi.encode(data, _round());
+        bytes memory dataWithRound = abi.encode(round, data);
         bytes32 requestHash = keccak256(dataWithRound);
 
         requestedHash[requestId] = requestHash;
 
-        emit RequestedRandomness(data);
+        emit RequestedRandomness(round, data);
     }
 
     /// @notice Callback function used by Gelato VRF to return the random number.
@@ -64,7 +65,7 @@ abstract contract GelatoVRFConsumerBase is IGelatoVRFConsumer {
     ) external {
         require(msg.sender == _operator(), "only operator");
 
-        (bytes memory data, ) = abi.decode(dataWithRound, (bytes, uint256));
+        (, bytes memory data) = abi.decode(dataWithRound, (uint256, bytes));
         (uint256 requestId, bytes memory extraData) = abi.decode(
             data,
             (uint256, bytes)

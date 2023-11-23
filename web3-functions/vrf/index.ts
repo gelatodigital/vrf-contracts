@@ -6,12 +6,11 @@ import {
   Web3Function,
   Web3FunctionContext,
 } from "@gelatonetwork/web3-functions-sdk";
-
 import { getNextRandomness } from "../../src/drand_util";
 
 // contract abis
 const CONSUMER_ABI = [
-  "event RequestedRandomness(bytes data)",
+  "event RequestedRandomness(uint256 indexed round, bytes data)",
   "function fulfillRandomness(uint256 randomness, bytes calldata data) external",
 ];
 
@@ -22,8 +21,9 @@ const MAX_DEPTH = MAX_RANGE * MAX_REQUESTS; // How far the VRF should catch up w
 const MAX_DISTANCE = 1000; // Helpful to detect if the VRF has been paused not to recover too many blocks
 
 Web3Function.onRun(async (context: Web3FunctionContext) => {
-  const { userArgs, storage, multiChainProvider } = context;
+  const { userArgs, storage, multiChainProvider, gelatoArgs } = context;
 
+  const { chainId } = gelatoArgs;
   const provider = multiChainProvider.default();
 
   const consumerAddress = userArgs.consumerAddress as string;
@@ -70,14 +70,14 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
   console.log(`Matched ${logs.length} new events`);
   for (const log of logs) {
     const event = consumer.interface.parseLog(log);
-    const [consumerData] = event.args;
-    const { timestamp } = await provider.getBlock(log.blockHash);
-    const { round, randomness } = await getNextRandomness(timestamp);
+    const [round, consumerData] = event.args;
+
+    const { randomness } = await getNextRandomness(chainId, parseInt(round));
     const encodedRandomness = ethers.BigNumber.from(`0x${randomness}`);
 
     const consumerDataWithRound = ethers.utils.defaultAbiCoder.encode(
-      ["bytes", "uint256"],
-      [consumerData, round]
+      ["uint256", "bytes"],
+      [round, consumerData]
     );
 
     callData.push({
