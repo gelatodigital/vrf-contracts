@@ -69,7 +69,7 @@ async function fetchDrandResponseWithCaching(round: number) {
 }
 
 async function fetchDrandResponse(round: number) {
-  console.log("Fetching randomness from round: ", round);
+  console.log(`Fetching randomness from round ${round}`);
   const errors = [];
 
   for (const client of clientCache.getClients()) {

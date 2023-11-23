@@ -8,7 +8,7 @@ import {
     VRFConsumerBaseV2
 } from "@chainlink/contracts/src/v0.8/VRFConsumerBaseV2.sol";
 
-contract MockVRFConsumer is VRFConsumerBaseV2 {
+contract MockCLVRFConsumer is VRFConsumerBaseV2 {
     VRFCoordinatorV2Interface private immutable _coordinator;
     uint256 public requestId;
     mapping(uint256 => uint256[]) public randomWordsOf;
