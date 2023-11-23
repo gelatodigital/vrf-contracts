@@ -42,7 +42,7 @@ sequenceDiagram
   VRFCoordinatorV2Adapter->>User: Return Randomness
 ```
 
-Both the aforementioned contracts implement the `GelatoVRFConsumer.sol` interface, which is what the Web3 Function is able to operate with.
+Both the aforementioned contracts implement the `IGelatoVRFConsumer.sol` interface, which is what the Web3 Function is able to operate with.
 
 Some small difference lie in the setup required to make the W3F work depending on which use-case is being targeted.
 
@@ -59,9 +59,6 @@ To enable further composability the `requestedRandomness` method supports passin
 To encode arbitrary data correctly `abi.encode` can be used like that:
 
 ```solidity
-// Reference the inbox instance (depends on the address)
-GelatoVRFInbox inbox = GelatoVRFInbox(0x...);
-
 // Given some arbitrary values to pass to the callback
 address arbitraryAddress = 0x...
 uint256 arbitraryUint256 = ...
@@ -69,22 +66,22 @@ SomeContract arbitraryContract = ...
 
 // Encode into an array of bytes
 bytes arbitraryData = abi.encode(arbitraryAddress, arbitraryUint256, arbitraryContract);
-address randomnessConsumer = 0x...
 
 // Request randomness for the randomnessConsumer
-inbox.requestRandomness(randomnessConsumer, arbitraryData);
+_requestRandomness(arbitraryData)
 ```
 
-The randomness consumer is then able to decode the data using `abi.decode` in the `fulfillRandomness` method:
+The randomness consumer is then able to decode the data using `abi.decode` in the `_fulfillRandomness` method:
 
 ```solidity
-function fulfillRandomness(
+function _fulfillRandomness(
     uint256 randomness,
-    bytes calldata data
+    uint256 requestId,
+    bytes memory extraData
 ) external {
     // Decode the variables specifying their types
     (address arbitraryAddress, uint256 arbitraryUint256, SomeContract arbitraryContract) =
-    abi.decode(data, (address, uint256, SomeContract));
+    abi.decode(extraData, (address, uint256, SomeContract));
 
     // Do something with the decode variables
     // ...
@@ -95,7 +92,7 @@ function fulfillRandomness(
 
 When implementing a Gelato VRF into their contracts there are two possibilities available:
 1. Inherit `GelatoVRFConsumberBase.sol` is definitely the go-to option for most implementations since it already provides a request id, handles multiple requests correctly and offers replay attack protection.
-2. Implementing `GelatoVRFConsumer.sol` is a possibility if ever you feel like you need a different implementation of the VRF. However, it is not recommended.
+2. Implementing `IGelatoVRFConsumer.sol` is a possibility if ever you feel like you need a different implementation of the VRF. However, it is not recommended.
 
 ## Web3 Function Details
 
