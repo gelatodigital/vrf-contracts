@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.18;
+pragma solidity ^0.8.0;
 
 import {VRFCoordinatorV2Adapter} from "./VRFCoordinatorV2Adapter.sol";
 
@@ -12,7 +12,7 @@ contract VRFCoordinatorV2AdapterFactory {
     event AdapterCreated(address indexed creator, address adapter);
 
     /// Mapping to keep track of which deployer created which adapter.
-    mapping(address deployer => address adapter) public adapterRegistry;
+    mapping(address => address) public adapterRegistry;
 
     /// @notice Create a new instance of VRFCoordinatorV2Adapter.
     /// @dev Creates a new VRFCoordinatorV2Adapter contract with the provided operator address.

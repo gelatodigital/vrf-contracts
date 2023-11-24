@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.18;
+pragma solidity ^0.8.0;
 
 import {IGelatoVRFConsumer} from "contracts/IGelatoVRFConsumer.sol";
 
@@ -14,7 +14,7 @@ abstract contract GelatoVRFConsumerBase is IGelatoVRFConsumer {
     uint256 private constant _PERIOD = 3;
     uint256 private constant _GENESIS = 1692803367;
     bool[] public requestPending;
-    mapping(uint256 requestId => bytes32 requestHash) public requestedHash;
+    mapping(uint256 => bytes32) public requestedHash;
 
     /// @notice Returns the address of the dedicated msg.sender.
     /// @dev The operator can be found on the Gelato dashboard after a VRF is deployed.

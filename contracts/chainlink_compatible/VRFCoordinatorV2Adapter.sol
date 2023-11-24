@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.18;
+pragma solidity ^0.8.0;
 
 import {VRFCoordinatorV2Stub} from "./internal/VRFCoordinatorV2Stub.sol";
 import {GelatoVRFConsumerBase} from "contracts/GelatoVRFConsumerBase.sol";

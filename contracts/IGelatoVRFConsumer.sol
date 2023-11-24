@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.18;
+pragma solidity ^0.8.0;
 
 /// @title IGelatoVRFConsumer
 /// @dev Interface for consuming random number provided by Drand.
