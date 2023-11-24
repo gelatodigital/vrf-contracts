@@ -82,7 +82,7 @@ async function fetchDrandResponse(round: number) {
   throw errors.pop();
 }
 
-export async function getNextRandomness(chainId: number, round: number) {
+export async function getNextRandomness(round: number) {
   // eslint-disable-next-line no-constant-condition
   while (true) {
     try {

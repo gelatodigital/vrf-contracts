@@ -84,8 +84,12 @@ describe("GelatoVRFConsumerBase Test Suite", function () {
         .connect(user)
         .requestRandomness(expectedExtraData);
       const txReceipt = await tx.wait();
+      const [roundBn] = mockConsumer.interface.decodeEventLog(
+        "RequestedRandomness",
+        txReceipt.logs[0].data
+      );
+      const round = parseInt(roundBn);
 
-      const round = parseInt(txReceipt.logs[0].topics[1]);
       const timeNowSec = Math.floor(Date.now() / 1000);
       const timeOfRound = round * quicknet.period + quicknet.genesis_time;
       await sleep((timeOfRound - timeNowSec) * 1000);
@@ -138,7 +142,12 @@ describe("GelatoVRFConsumerBase Test Suite", function () {
       .requestRandomness(expectedExtraData);
     const txReceipt = await tx.wait();
 
-    const round = parseInt(txReceipt.logs[0].topics[1]);
+    const [roundBn] = mockConsumer.interface.decodeEventLog(
+      "RequestedRandomness",
+      txReceipt.logs[0].data
+    );
+    const round = parseInt(roundBn);
+
     const timeNowSec = Math.floor(Date.now() / 1000);
     const timeOfRound = round * quicknet.period + quicknet.genesis_time;
     await sleep((timeOfRound - timeNowSec) * 1000);
@@ -177,7 +186,12 @@ describe("GelatoVRFConsumerBase Test Suite", function () {
       .requestRandomness(expectedExtraData);
     const txReceipt = await tx.wait();
 
-    const round = parseInt(txReceipt.logs[0].topics[1]);
+    const [roundBn] = mockConsumer.interface.decodeEventLog(
+      "RequestedRandomness",
+      txReceipt.logs[0].data
+    );
+    const round = parseInt(roundBn);
+
     const timeNowSec = Math.floor(Date.now() / 1000);
     const timeOfRound = round * quicknet.period + quicknet.genesis_time;
     await sleep((timeOfRound - timeNowSec) * 1000);
