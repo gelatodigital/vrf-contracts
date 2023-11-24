@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.18;
+pragma solidity ^0.8.0;
 
 import {VRFCoordinatorV2Stub} from "./internal/VRFCoordinatorV2Stub.sol";
 import {GelatoVRFConsumerBase} from "contracts/GelatoVRFConsumerBase.sol";
@@ -134,7 +134,7 @@ contract VRFCoordinatorV2Adapter is
     /// @param data Additional data provided by Gelato VRF, typically containing request details.
     function _fulfillRandomness(
         uint256 randomness,
-        uint64 requestId,
+        uint256 requestId,
         bytes memory data
     ) internal override {
         (uint32 numWords, VRFConsumerBaseV2 consumer) = abi.decode(

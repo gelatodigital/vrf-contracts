@@ -6,12 +6,11 @@ import {
   Web3Function,
   Web3FunctionContext,
 } from "@gelatonetwork/web3-functions-sdk";
-
 import { getNextRandomness } from "../../src/drand_util";
 
 // contract abis
 const CONSUMER_ABI = [
-  "event RequestedRandomness(bytes data)",
+  "event RequestedRandomness(uint256 round, bytes data)",
   "function fulfillRandomness(uint256 randomness, bytes calldata data) external",
 ];
 
@@ -70,21 +69,21 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
   console.log(`Matched ${logs.length} new events`);
   for (const log of logs) {
     const event = consumer.interface.parseLog(log);
-    const [consumerData] = event.args;
-    const { timestamp } = await provider.getBlock(log.blockHash);
-    const randomness = await getNextRandomness(timestamp);
+    const [round, consumerData] = event.args;
+
+    const { randomness } = await getNextRandomness(parseInt(round));
     const encodedRandomness = ethers.BigNumber.from(`0x${randomness}`);
 
-    const consumerDataWithTimestamp = ethers.utils.defaultAbiCoder.encode(
-      ["bytes", "uint256"],
-      [consumerData, timestamp]
+    const consumerDataWithRound = ethers.utils.defaultAbiCoder.encode(
+      ["uint256", "bytes"],
+      [round, consumerData]
     );
 
     callData.push({
       to: consumerAddress,
       data: consumer.interface.encodeFunctionData("fulfillRandomness", [
         encodedRandomness,
-        consumerDataWithTimestamp,
+        consumerDataWithRound,
       ]),
     });
   }

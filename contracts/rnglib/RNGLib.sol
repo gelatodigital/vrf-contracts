@@ -1,8 +1,11 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.18;
+pragma solidity ^0.8.0;
 
-/// @title RNGLib
-/// @dev Library providing a simple interface to manage a contract-internal PRNG and pull random numbers from it.
+/**
+ * @title RNGLib
+ * @dev Library providing a simple interface to manage a
+ * contract-internal PRNG and pull random numbers from it.
+ */
 library RNGLib {
     /// @dev Structure to hold the state of the random number generator (RNG).
     struct RNGState {
@@ -10,9 +13,9 @@ library RNGLib {
         uint256 counter;
     }
 
-    /// @notice Seed a new random number generator (RNG) based on a value from a public randomness beacon.
-    /// @dev To ensure domain separation, at least one of randomness, chain id, current contract address,
-    /// or the domain string must be different between two different RNGs.
+    /// @notice Seed a new RNG based on value from a public randomness beacon.
+    /// @dev To ensure domain separation, at least one of randomness, chain id, current contract
+    /// address, or the domain string must be different between two different RNGs.
     /// @param randomness The value from a public randomness beacon.
     /// @param domain A string that contributes to domain separation.
     /// @return st The initialized RNGState struct.
@@ -39,7 +42,7 @@ library RNGLib {
         }
     }
 
-    /// @notice Generate a distinct, uniformly distributed number less than max, and advance the RNG.
+    /// @notice Generate a distinct, uniformly distributed number less than max, and advance the RNG
     /// @dev Max is limited to uint224 to ensure modulo bias probability is negligible.
     /// @param st The RNGState struct representing the state of the RNG.
     /// @param max The upper limit for the generated random number (exclusive).

@@ -5,14 +5,13 @@ import {
   HttpCachingChain,
   HttpChainClient,
   fetchBeacon,
-  roundAt,
 } from "drand-client";
 
 import { quicknet } from "./drand_info";
 
 const DRAND_OPTIONS: ChainOptions = {
   disableBeaconVerification: false,
-  noCache: false,
+  noCache: true,
   chainVerificationParams: {
     chainHash: quicknet.hash,
     publicKey: quicknet.public_key,
@@ -53,8 +52,24 @@ const clientCache = new HttpChainClientCache([
   "https://api.drand.secureweb3.com:6875",
 ]);
 
+const randomnessOfRoundCache: Map<number, string> = new Map();
+
+async function fetchDrandResponseWithCaching(round: number) {
+  let randomness = randomnessOfRoundCache.get(round);
+
+  if (!randomness) {
+    const response = await fetchDrandResponse(round);
+    randomness = response.randomness;
+    randomnessOfRoundCache.set(response.round, randomness);
+
+    return { round: response.round, randomness };
+  }
+
+  return { round, randomness };
+}
+
 async function fetchDrandResponse(round: number) {
-  console.log("Fetching randomness");
+  console.log(`Fetching randomness from round ${round}`);
   const errors = [];
 
   for (const client of clientCache.getClients()) {
@@ -67,15 +82,13 @@ async function fetchDrandResponse(round: number) {
   throw errors.pop();
 }
 
-export async function getNextRandomness(requestTimeInSec: number) {
-  const nextRound = roundAt(requestTimeInSec * 1000, quicknet) + 1;
-
+export async function getNextRandomness(round: number) {
   // eslint-disable-next-line no-constant-condition
   while (true) {
     try {
-      const { round, randomness } = await fetchDrandResponse(nextRound);
+      const { randomness } = await fetchDrandResponseWithCaching(round);
       console.log(`Fulfilling from round ${round}`);
-      return randomness;
+      return { randomness };
     } catch (e) {
       console.log("Failed to fetch randomness", e);
       await sleep(500);

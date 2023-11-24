@@ -13,7 +13,7 @@ import {
 import { ContractFactory } from "ethers";
 import hre from "hardhat";
 import { quicknet } from "../src/drand_info";
-import { MockVRFConsumer, VRFCoordinatorV2Adapter } from "../typechain";
+import { MockCLVRFConsumer, VRFCoordinatorV2Adapter } from "../typechain";
 const { deployments, w3f, ethers } = hre;
 
 import fetch from "node-fetch";
@@ -21,7 +21,7 @@ global.fetch = fetch;
 
 const DRAND_OPTIONS: ChainOptions = {
   disableBeaconVerification: false,
-  noCache: false,
+  noCache: true,
   chainVerificationParams: {
     chainHash: quicknet.hash,
     publicKey: quicknet.public_key,
@@ -43,7 +43,7 @@ describe("Chainlink Adapter Test Suite", function () {
 
   // Contracts
   let adapter: VRFCoordinatorV2Adapter;
-  let mockConsumer: MockVRFConsumer;
+  let mockConsumer: MockCLVRFConsumer;
 
   // Drand testing client
   let chain: HttpCachingChain;
@@ -59,7 +59,7 @@ describe("Chainlink Adapter Test Suite", function () {
     // Solidity contracts
     adapterFactory = await ethers.getContractFactory("VRFCoordinatorV2Adapter");
     mockConsumerFactory = await ethers.getContractFactory(
-      "contracts/chainlink_compatible/mocks/MockVRFConsumer.sol:MockVRFConsumer"
+      "contracts/chainlink_compatible/mocks/MockCLVRFConsumer.sol:MockCLVRFConsumer"
     );
 
     // Drand testing client
@@ -77,7 +77,7 @@ describe("Chainlink Adapter Test Suite", function () {
       .deploy(operator, operator, [])) as VRFCoordinatorV2Adapter;
     mockConsumer = (await mockConsumerFactory
       .connect(deployer)
-      .deploy(adapter.address)) as MockVRFConsumer;
+      .deploy(adapter.address)) as MockCLVRFConsumer;
     userArgs = { consumerAddress: adapter.address };
 
     await adapter
@@ -106,7 +106,7 @@ describe("Chainlink Adapter Test Suite", function () {
     const abi = ethers.utils.defaultAbiCoder;
     const seed = ethers.utils.keccak256(
       abi.encode(
-        ["uint256", "address", "uint256", "uint64"],
+        ["uint256", "address", "uint256", "uint256"],
         [
           ethers.BigNumber.from(`0x${randomness}`),
           adapter.address,
