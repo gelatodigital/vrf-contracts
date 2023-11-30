@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import {IGelatoVRFConsumer} from "contracts/IGelatoVRFConsumer.sol";
 
 /// @title GelatoVRFConsumerBase
-/// @dev This contract is inheritable by upgradeable smart contracts.
+/// @dev This contract can be inherit by upgradeable smart contracts as well.
 /// @dev This contract handles domain separation between consecutive randomness requests
 /// The contract has to be implemented by contracts willing to use the gelato VRF system.
 /// This base contract enhances the GelatoVRFConsumer by introducing request IDs and
