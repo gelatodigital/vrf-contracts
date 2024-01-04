@@ -5,19 +5,13 @@ import {
 } from "@gelatonetwork/web3-functions-sdk";
 import { BigNumber, Contract, utils } from "ethers";
 import { getNextRandomness } from "../../src/drand_util";
-import Multicall3Abi from "./Multicall3Abi.json";
+import GelatoVRFConsumerBaseAbi from "./abis/GelatoVRFConsumerBase.json";
+import Multicall3Abi from "./abis/Multicall3.json";
 
-// contract abis
-const CONSUMER_ABI = [
-  "event RequestedRandomness(uint256 round, bytes data)",
-  "function fulfillRandomness(uint256 randomness, bytes calldata data) external",
-  "function requestPending(uint256 index) external view returns(bool)",
-];
+const MAX_FILTER_RANGE = 100; // Limit range of events to comply with rpc providers.
+const MAX_FILTER_REQUESTS = 5; // Limit number of requests on every execution to avoid hitting timeout.
 
-const MAX_FILTER_RANGE = 100; // limit range of events to comply with rpc providers
-const MAX_FILTER_REQUESTS = 5; // limit number of requests on every execution to avoid hitting timeout
-
-const REQUEST_AGE = 60; // 1 minute. (Triggers fallback if request not fulfilled after time)
+const REQUEST_AGE = 60; // 1 minute. (Triggers fallback if request not fulfilled after time.)
 
 Web3Function.onRun(async (context: Web3FunctionContext) => {
   const { userArgs, gelatoArgs, multiChainProvider, storage } = context;
@@ -25,7 +19,11 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
   const provider = multiChainProvider.default();
 
   const consumerAddress = userArgs.consumerAddress as string;
-  const consumer = new Contract(consumerAddress, CONSUMER_ABI, provider);
+  const consumer = new Contract(
+    consumerAddress,
+    GelatoVRFConsumerBaseAbi,
+    provider
+  );
 
   const multicall3Address =
     gelatoArgs.chainId === 324 // zksync
@@ -55,37 +53,47 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
       };
 
       const result = await provider.getLogs(eventFilter);
+      console.log(
+        `Found ${result.length} request within blocks ${fromBlock}-${toBlock}`
+      );
+
       logs.push(...result);
       lastBlock = toBlock;
     } catch (error) {
       return {
         canExec: false,
-        message: `Rpc call failed: ${(error as Error).message}`,
+        message: `Fail to getLogs ${fromBlock}-${toBlock}: ${
+          (error as Error).message
+        }`,
       };
     }
   }
 
-  console.log(`logs length: ${logs.length}`);
-
   // h: blockHash, t: timestamp, i: index
-  const pendingRequests: { h: string; t: number; i: number }[] = JSON.parse(
-    (await storage.get("pendingRequests")) ?? "[]"
+  const requests: { h: string; t: number; i: number }[] = JSON.parse(
+    (await storage.get("requests")) ?? "[]"
   );
 
+  // Collect all requests made by consumer.
   for (const log of logs) {
     // Todo: reduce rpc call here
     const timestamp = (await provider.getBlock(log.blockNumber)).timestamp;
 
-    pendingRequests.push({
+    requests.push({
       h: log.blockHash,
       t: timestamp,
       i: log.logIndex,
     });
   }
 
-  const pendingRoundAndDatas: { round: BigNumber; consumerData: string }[] = [];
+  const overdueRequests: {
+    round: BigNumber;
+    consumerData: string;
+    pos: number; // index in requests array
+  }[] = [];
 
-  for (const req of pendingRequests) {
+  // Check if requests are over the REQUEST_AGE.
+  for (const [index, req] of requests.entries()) {
     const now = Math.floor(Date.now() / 1000);
 
     if (now > req.t + REQUEST_AGE) {
@@ -100,8 +108,6 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
         return log.logIndex == req.i;
       });
 
-      console.log("logInPending: ", JSON.stringify(logInPending));
-
       if (logInPending.length == 0) continue;
 
       const [round, consumerData] = consumer.interface.decodeEventLog(
@@ -109,11 +115,14 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
         logInPending[0].data
       ) as [BigNumber, string];
 
-      pendingRoundAndDatas.push({ round, consumerData });
+      overdueRequests.push({ round, consumerData, pos: index });
     }
   }
 
-  const multicallData = pendingRoundAndDatas.map(({ consumerData }) => {
+  console.log(`Processing ${overdueRequests.length} overdue requests`);
+
+  // Check if requests are already fulfilled by event trigger w3f.
+  const multicallData = overdueRequests.map(({ consumerData }) => {
     const decoded = utils.defaultAbiCoder.decode(
       ["uint256", "bytes"],
       consumerData
@@ -123,6 +132,7 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
     const callData = consumer.interface.encodeFunctionData("requestPending", [
       requestId,
     ]);
+
     return { target: consumer.address, callData };
   });
 
@@ -130,14 +140,14 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
     multicallData
   )) as { blockNumber: BigNumber; returnData: string[] };
 
-  const callData = [];
+  const callDatas = [];
+  let nrFulfilledOverdueRequests = 0;
   for (const [index, data] of returnData.entries()) {
     const isRequestPending = !!parseInt(data);
-    console.log(`isRequestPending: ${isRequestPending}`);
+
+    const { round, consumerData, pos } = overdueRequests[index];
 
     if (isRequestPending) {
-      const { round, consumerData } = pendingRoundAndDatas[index];
-
       const { randomness } = await getNextRandomness(round.toNumber());
       const encodedRandomness = BigNumber.from(`0x${randomness}`);
 
@@ -146,27 +156,40 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
         [round, consumerData]
       );
 
-      callData.push({
+      callDatas.push({
         to: consumerAddress,
         data: consumer.interface.encodeFunctionData("fulfillRandomness", [
           encodedRandomness,
           consumerDataWithRound,
         ]),
       });
+    } else {
+      nrFulfilledOverdueRequests++;
+
+      // Remove request from requests array.
+      // Request that is being fulfilled by fallback will be removed on the next run.
+      requests.splice(pos, 1);
     }
   }
 
-  // Todo: update lastBlock
+  console.log(`${callDatas.length} unfulfilled overdue requests`);
+  console.log(`${nrFulfilledOverdueRequests} fulfilled overdue requests`);
 
-  if (callData.length > 0) {
+  await storage.set("requests", JSON.stringify(requests));
+  await storage.set("lastBlock", lastBlock.toString());
+
+  if (callDatas.length > 0) {
+    // Execute a random unfulfilled overdue request.
+    const callData = callDatas[Math.floor(Math.random() * callDatas.length)];
+
     return {
       canExec: true,
-      callData,
+      callData: [callData],
     };
   } else {
     return {
       canExec: false,
-      message: `All vrf request fulfilled at ${lastBlock}`,
+      message: `All vrf requests before block ${lastBlock} were fulfilled`,
     };
   }
 });
