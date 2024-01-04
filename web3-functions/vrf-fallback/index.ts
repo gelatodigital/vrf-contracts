@@ -4,7 +4,7 @@ import {
   Web3FunctionContext,
 } from "@gelatonetwork/web3-functions-sdk";
 import { BigNumber, Contract, utils } from "ethers";
-import { getNextRandomness } from "../../src/drand_util";
+import { getNextRandomness, getRoundTime } from "../../src/drand_util";
 import GelatoVRFConsumerBaseAbi from "./abis/GelatoVRFConsumerBase.json";
 import Multicall3Abi from "./abis/Multicall3.json";
 
@@ -73,12 +73,18 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
   const requests: { h: string; t: number; i: number }[] = JSON.parse(
     (await storage.get("requests")) ?? "[]"
   );
+  const logCache: Map<string, Log> = new Map();
 
   // Collect all requests made by consumer.
   for (const log of logs) {
-    // Todo: reduce rpc call here
-    const timestamp = (await provider.getBlock(log.blockNumber)).timestamp;
+    const [round] = consumer.interface.decodeEventLog(
+      "RequestedRandomness",
+      log.data
+    ) as [BigNumber, string];
 
+    const timestamp = Math.floor(getRoundTime(round.toNumber()) / 1000);
+
+    logCache.set(`${log.blockHash}-${log.logIndex}`, log);
     requests.push({
       h: log.blockHash,
       t: timestamp,
@@ -97,29 +103,33 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
     const now = Math.floor(Date.now() / 1000);
 
     if (now > req.t + REQUEST_AGE) {
-      const logs = await provider.getLogs({
-        address: consumerAddress,
-        blockHash: req.h,
-      });
+      let log = logCache.get(`${req.h}-${req.i}`);
 
-      if (logs.length == 0) continue;
+      if (!log) {
+        const logs = await provider.getLogs({
+          address: consumerAddress,
+          blockHash: req.h,
+        });
 
-      const logInPending = logs.filter((log) => {
-        return log.logIndex == req.i;
-      });
+        if (logs.length == 0) continue;
 
-      if (logInPending.length == 0) continue;
+        log = logs.filter((l) => {
+          return l.logIndex == req.i;
+        })[0];
+
+        if (!log) continue;
+      }
 
       const [round, consumerData] = consumer.interface.decodeEventLog(
         "RequestedRandomness",
-        logInPending[0].data
+        log.data
       ) as [BigNumber, string];
 
       overdueRequests.push({ round, consumerData, pos: index });
     }
   }
 
-  console.log(`Processing ${overdueRequests.length} overdue requests`);
+  console.log(`Processing ${overdueRequests.length} overdue requests.`);
 
   // Check if requests are already fulfilled by event trigger w3f.
   const multicallData = overdueRequests.map(({ consumerData }) => {
@@ -172,8 +182,8 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
     }
   }
 
-  console.log(`${callDatas.length} unfulfilled overdue requests`);
-  console.log(`${nrFulfilledOverdueRequests} fulfilled overdue requests`);
+  console.log(`${callDatas.length} unfulfilled overdue requests.`);
+  console.log(`${nrFulfilledOverdueRequests} fulfilled overdue requests.`);
 
   await storage.set("requests", JSON.stringify(requests));
   await storage.set("lastBlock", lastBlock.toString());

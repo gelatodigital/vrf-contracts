@@ -5,6 +5,7 @@ import {
   HttpCachingChain,
   HttpChainClient,
   fetchBeacon,
+  roundTime,
 } from "drand-client";
 
 import { quicknet } from "./drand_info";
@@ -94,4 +95,8 @@ export async function getNextRandomness(round: number) {
       await sleep(500);
     }
   }
+}
+
+export function getRoundTime(round: number) {
+  return roundTime(quicknet, round);
 }
