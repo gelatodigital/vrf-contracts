@@ -112,6 +112,7 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
   )) as { blockNumber: BigNumber; returnData: string[] };
 
   requests = requests.filter((_, index) => {
+    // Converting returnData to boolean. returnData is in bytes32 hexadecimal form (0x..00 or 0x..01).
     const isRequestPending = !!parseInt(returnData[index]);
     return isRequestPending;
   });
