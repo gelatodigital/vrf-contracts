@@ -8,8 +8,8 @@ import { getNextRandomness, getRoundTime } from "../../src/drand_util";
 import GelatoVRFConsumerBaseAbi from "./abis/GelatoVRFConsumerBase.json";
 import Multicall3Abi from "./abis/Multicall3.json";
 
-const MAX_FILTER_RANGE = 100; // Limit range of events to comply with rpc providers.
-const MAX_FILTER_REQUESTS = 5; // Limit number of requests on every execution to avoid hitting timeout.
+const MAX_FILTER_RANGE = 500; // Limit range of events to comply with rpc providers.
+const MAX_FILTER_REQUESTS = 3; // Limit number of requests on every execution to avoid hitting timeout.
 
 const REQUEST_AGE = 60; // 1 minute. (Triggers fallback if request not fulfilled after time.)
 
@@ -54,7 +54,7 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
 
       const result = await provider.getLogs(eventFilter);
       console.log(
-        `Found ${result.length} request within blocks ${fromBlock}-${toBlock}`
+        `Found ${result.length} request within blocks ${fromBlock}-${toBlock}.`
       );
 
       logs.push(...result);
@@ -64,23 +64,29 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
         canExec: false,
         message: `Fail to getLogs ${fromBlock}-${toBlock}: ${
           (error as Error).message
-        }`,
+        }.`,
       };
     }
   }
 
-  // h: blockHash, t: timestamp, i: index
-  const requests: { h: string; t: number; i: number }[] = JSON.parse(
+  // h: blockHash, t: timestamp, i: index, r: requestId
+  let requests: { h: string; t: number; i: number; r: number }[] = JSON.parse(
     (await storage.get("requests")) ?? "[]"
   );
   const logCache: Map<string, Log> = new Map();
 
   // Collect all requests made by consumer.
   for (const log of logs) {
-    const [round] = consumer.interface.decodeEventLog(
+    const [round, consumerData] = consumer.interface.decodeEventLog(
       "RequestedRandomness",
       log.data
     ) as [BigNumber, string];
+
+    const decoded = utils.defaultAbiCoder.decode(
+      ["uint256", "bytes"],
+      consumerData
+    );
+    const requestId: BigNumber = decoded[0];
 
     const timestamp = Math.floor(getRoundTime(round.toNumber()) / 1000);
 
@@ -89,117 +95,94 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
       h: log.blockHash,
       t: timestamp,
       i: log.logIndex,
+      r: requestId.toNumber(),
     });
   }
 
-  const overdueRequests: {
-    round: BigNumber;
-    consumerData: string;
-    pos: number; // index in requests array
-  }[] = [];
-
-  // Check if requests are over the REQUEST_AGE.
-  for (const [index, req] of requests.entries()) {
-    const now = Math.floor(Date.now() / 1000);
-
-    if (now > req.t + REQUEST_AGE) {
-      let log = logCache.get(`${req.h}-${req.i}`);
-
-      if (!log) {
-        const logs = await provider.getLogs({
-          address: consumerAddress,
-          blockHash: req.h,
-        });
-
-        if (logs.length == 0) continue;
-
-        log = logs.filter((l) => {
-          return l.logIndex == req.i;
-        })[0];
-
-        if (!log) continue;
-      }
-
-      const [round, consumerData] = consumer.interface.decodeEventLog(
-        "RequestedRandomness",
-        log.data
-      ) as [BigNumber, string];
-
-      overdueRequests.push({ round, consumerData, pos: index });
-    }
-  }
-
-  console.log(`Processing ${overdueRequests.length} overdue requests.`);
-
-  // Check if requests are already fulfilled by event trigger w3f.
-  const multicallData = overdueRequests.map(({ consumerData }) => {
-    const decoded = utils.defaultAbiCoder.decode(
-      ["uint256", "bytes"],
-      consumerData
-    );
-    const requestId: BigNumber = decoded[0];
-
-    const callData = consumer.interface.encodeFunctionData("requestPending", [
-      requestId,
-    ]);
-
-    return { target: consumer.address, callData };
+  // Filter out requests that are already fulfilled
+  const multicallData = requests.map(({ r }) => {
+    return {
+      target: consumer.address,
+      callData: consumer.interface.encodeFunctionData("requestPending", [r]),
+    };
   });
 
   const { returnData } = (await multicall.callStatic.aggregate(
     multicallData
   )) as { blockNumber: BigNumber; returnData: string[] };
 
-  const callDatas = [];
-  let nrFulfilledOverdueRequests = 0;
-  for (const [index, data] of returnData.entries()) {
-    const isRequestPending = !!parseInt(data);
+  requests = requests.filter((_, index) => {
+    const isRequestPending = !!parseInt(returnData[index]);
+    return isRequestPending;
+  });
 
-    const { round, consumerData, pos } = overdueRequests[index];
+  await storage.set("requests", JSON.stringify(requests));
+  await storage.set("lastBlock", lastBlock.toString());
 
-    if (isRequestPending) {
-      const { randomness } = await getNextRandomness(round.toNumber());
-      const encodedRandomness = BigNumber.from(`0x${randomness}`);
+  console.log(`${requests.length} pending requests.`);
 
-      const consumerDataWithRound = utils.defaultAbiCoder.encode(
-        ["uint256", "bytes"],
-        [round, consumerData]
-      );
+  // Filter out requests that are smaller than request age.
+  requests = requests.filter((req) => {
+    const now = Math.floor(Date.now() / 1000);
 
-      callDatas.push({
+    return now > req.t + REQUEST_AGE;
+  });
+  console.log(`${requests.length} overdue pending requests.`);
+
+  if (requests.length === 0) {
+    return {
+      canExec: false,
+      message: `All VRF requests before block ${lastBlock} were fulfilled.`,
+    };
+  }
+
+  // Process a random request.
+  const randomRequestIndex = Math.floor(Math.random() * requests.length);
+  const requestToFulfill = requests[randomRequestIndex];
+
+  const logsToProcess = await provider.getLogs({
+    address: consumerAddress,
+    blockHash: requestToFulfill.h,
+  });
+
+  const logToProcess = logsToProcess.find(
+    (l) => l.logIndex == requestToFulfill.i
+  );
+
+  if (logsToProcess.length === 0 || !logToProcess) {
+    requests.splice(randomRequestIndex, 1);
+    await storage.set("requests", JSON.stringify(requests));
+
+    return {
+      canExec: false,
+      message: `Request no longer valid ${JSON.stringify(requestToFulfill)}.`,
+    };
+  }
+
+  // Get randomness.
+  const [round, consumerData] = consumer.interface.decodeEventLog(
+    "RequestedRandomness",
+    logToProcess.data
+  ) as [BigNumber, string];
+
+  const { randomness } = await getNextRandomness(round.toNumber());
+  const encodedRandomness = BigNumber.from(`0x${randomness}`);
+
+  const consumerDataWithRound = utils.defaultAbiCoder.encode(
+    ["uint256", "bytes"],
+    [round, consumerData]
+  );
+
+  return {
+    canExec: true,
+    callData: [
+      {
         to: consumerAddress,
         data: consumer.interface.encodeFunctionData("fulfillRandomness", [
           encodedRandomness,
           consumerDataWithRound,
         ]),
-      });
-    } else {
-      nrFulfilledOverdueRequests++;
-
-      // Remove request from requests array.
-      // Request that is being fulfilled by fallback will be removed on the next run.
-      requests.splice(pos, 1);
-    }
-  }
-
-  console.log(`${callDatas.length} unfulfilled overdue requests.`);
-  console.log(`${nrFulfilledOverdueRequests} fulfilled overdue requests.`);
-
-  await storage.set("requests", JSON.stringify(requests));
-  await storage.set("lastBlock", lastBlock.toString());
-
-  if (callDatas.length > 0) {
-    // Execute a random unfulfilled overdue request.
-    const callData = callDatas[Math.floor(Math.random() * callDatas.length)];
-
-    return {
-      canExec: true,
-      callData: [callData],
-    };
-  } else {
-    return {
-      canExec: false,
-      message: `All vrf requests before block ${lastBlock} were fulfilled`,
-    };
-  }
+      },
+    ],
+  };
 });
