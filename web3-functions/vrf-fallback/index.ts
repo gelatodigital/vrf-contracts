@@ -10,6 +10,8 @@ import Multicall3Abi from "./abis/Multicall3.json";
 
 const MAX_FILTER_RANGE = 500; // Limit range of events to comply with rpc providers.
 const MAX_FILTER_REQUESTS = 3; // Limit number of requests on every execution to avoid hitting timeout.
+const MAX_MULTICALL_REQUESTS = 100; // Limit range of events to comply with rpc providers.
+
 const REQUEST_AGE = 60; // 1 minute. (Triggers fallback if request not fulfilled after time.)
 
 Web3Function.onRun(async (context: Web3FunctionContext) => {
@@ -104,7 +106,8 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
   }
 
   // Filter out requests that are already fulfilled
-  const multicallData = requests.map(({ r }) => {
+  const multicallRequests = requests.slice(0, MAX_MULTICALL_REQUESTS);
+  const multicallData = multicallRequests.map(({ r }) => {
     return {
       target: consumer.address,
       callData: consumer.interface.encodeFunctionData("requestPending", [r]),
@@ -116,6 +119,7 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
   )) as { blockNumber: BigNumber; returnData: string[] };
 
   requests = requests.filter((_, index) => {
+    if (index >= MAX_MULTICALL_REQUESTS) return true; // Keep requests that were not included in multicall.
     // Converting returnData to boolean. returnData is in bytes32 hexadecimal form (0x..00 or 0x..01).
     const isRequestPending = !!parseInt(returnData[index]);
     return isRequestPending;
