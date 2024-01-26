@@ -76,7 +76,7 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
   }
 
   // h: blockHash, t: timestamp, i: index, r: requestId
-  let requests: { h: string; t: number; i: number; r: number }[] = JSON.parse(
+  let requests: { h: string; t: number; i: number; r: string }[] = JSON.parse(
     (await storage.get("requests")) ?? "[]"
   );
 
@@ -99,7 +99,7 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
       h: log.blockHash,
       t: timestamp,
       i: log.logIndex,
-      r: requestId.toNumber(),
+      r: requestId.toString(),
     });
   }
 
