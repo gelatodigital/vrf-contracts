@@ -10,7 +10,6 @@ import Multicall3Abi from "./abis/Multicall3.json";
 
 const MAX_FILTER_RANGE = 500; // Limit range of events to comply with rpc providers.
 const MAX_FILTER_REQUESTS = 3; // Limit number of requests on every execution to avoid hitting timeout.
-
 const REQUEST_AGE = 60; // 1 minute. (Triggers fallback if request not fulfilled after time.)
 
 Web3Function.onRun(async (context: Web3FunctionContext) => {
@@ -31,7 +30,12 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
       : "0xcA11bde05977b3631167028862bE2a173976CA11";
   const multicall = new Contract(multicall3Address, Multicall3Abi, provider);
 
-  const currentBlock = await provider.getBlockNumber();
+  // Avoid processing requests from recent blocks since they are not eligible for fallback (< REQUEST_AGE)
+  const blockTipDelay =
+    gelatoArgs.chainId === 1
+      ? 5 // (~60 seconds on ethereum)
+      : 20; // (~60 seconds for chain averaging 3s block time)
+  const currentBlock = (await provider.getBlockNumber()) - blockTipDelay;
 
   const logs: Log[] = [];
   let lastBlock = Number((await storage.get("lastBlock")) ?? currentBlock);
