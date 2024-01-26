@@ -79,7 +79,6 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
   let requests: { h: string; t: number; i: number; r: number }[] = JSON.parse(
     (await storage.get("requests")) ?? "[]"
   );
-  const logCache: Map<string, Log> = new Map();
 
   // Collect all requests made by consumer.
   for (const log of logs) {
@@ -96,7 +95,6 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
 
     const timestamp = Math.floor(getRoundTime(round.toNumber()) / 1000);
 
-    logCache.set(`${log.blockHash}-${log.logIndex}`, log);
     requests.push({
       h: log.blockHash,
       t: timestamp,
