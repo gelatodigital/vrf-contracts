@@ -40,7 +40,9 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
   const currentBlock = (await provider.getBlockNumber()) - blockTipDelay;
 
   const logs: Log[] = [];
-  let lastBlock = Number((await storage.get("lastBlock")) ?? currentBlock);
+  let lastBlock = Number(
+    (await storage.get("lastBlock")) ?? userArgs.fromBlock ?? currentBlock
+  );
   let nbRequests = 0;
 
   while (lastBlock < currentBlock && nbRequests < MAX_FILTER_REQUESTS) {
