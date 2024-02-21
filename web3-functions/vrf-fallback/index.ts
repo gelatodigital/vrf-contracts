@@ -9,7 +9,7 @@ import GelatoVRFConsumerBaseAbi from "./abis/GelatoVRFConsumerBase.json";
 import Multicall3Abi from "./abis/Multicall3.json";
 
 const MAX_FILTER_RANGE = 500; // Limit range of events to comply with rpc providers.
-const MAX_FILTER_REQUESTS = 3; // Limit number of requests on every execution to avoid hitting timeout.
+const MAX_FILTER_REQUESTS = 2; // Limit number of requests on every execution to avoid hitting timeout.
 const MAX_MULTICALL_REQUESTS = 100; // Limit range of events to comply with rpc providers.
 
 const REQUEST_AGE = 60; // 1 minute. (Triggers fallback if request not fulfilled after time.)
