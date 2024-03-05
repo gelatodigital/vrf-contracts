@@ -146,7 +146,9 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
   }
 
   // Process a random request.
-  const randomRequestIndex = Math.floor(Math.random() * requests.length);
+  const randomRequestIndex = Math.floor(
+    Math.random() * Math.min(MAX_MULTICALL_REQUESTS, requests.length)
+  );
   const requestToFulfill = requests[randomRequestIndex];
 
   const logsToProcess = await provider.getLogs({
