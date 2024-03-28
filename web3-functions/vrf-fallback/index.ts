@@ -9,7 +9,8 @@ import GelatoVRFConsumerBaseAbi from "./abis/GelatoVRFConsumerBase.json";
 import Multicall3Abi from "./abis/Multicall3.json";
 
 const MAX_FILTER_RANGE = 500; // Limit range of events to comply with rpc providers.
-const MAX_FILTER_REQUESTS = 3; // Limit number of requests on every execution to avoid hitting timeout.
+const MAX_FILTER_REQUESTS = 2; // Limit number of requests on every execution to avoid hitting timeout.
+const MAX_MULTICALL_REQUESTS = 100; // Limit range of events to comply with rpc providers.
 
 const REQUEST_AGE = 60; // 1 minute. (Triggers fallback if request not fulfilled after time.)
 
@@ -31,10 +32,17 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
       : "0xcA11bde05977b3631167028862bE2a173976CA11";
   const multicall = new Contract(multicall3Address, Multicall3Abi, provider);
 
-  const currentBlock = await provider.getBlockNumber();
+  // Avoid processing requests from recent blocks since they are not eligible for fallback (< REQUEST_AGE)
+  const blockTipDelay =
+    gelatoArgs.chainId === 1
+      ? 5 // (~60 seconds on ethereum)
+      : 20; // (~60 seconds for chain averaging 3s block time)
+  const currentBlock = (await provider.getBlockNumber()) - blockTipDelay;
 
   const logs: Log[] = [];
-  let lastBlock = Number((await storage.get("lastBlock")) ?? currentBlock);
+  let lastBlock = Number(
+    (await storage.get("lastBlock")) ?? userArgs.fromBlock ?? currentBlock
+  );
   let nbRequests = 0;
 
   while (lastBlock < currentBlock && nbRequests < MAX_FILTER_REQUESTS) {
@@ -70,10 +78,9 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
   }
 
   // h: blockHash, t: timestamp, i: index, r: requestId
-  let requests: { h: string; t: number; i: number; r: number }[] = JSON.parse(
+  let requests: { h: string; t: number; i: number; r: string }[] = JSON.parse(
     (await storage.get("requests")) ?? "[]"
   );
-  const logCache: Map<string, Log> = new Map();
 
   // Collect all requests made by consumer.
   for (const log of logs) {
@@ -90,17 +97,17 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
 
     const timestamp = Math.floor(getRoundTime(round.toNumber()) / 1000);
 
-    logCache.set(`${log.blockHash}-${log.logIndex}`, log);
     requests.push({
       h: log.blockHash,
       t: timestamp,
       i: log.logIndex,
-      r: requestId.toNumber(),
+      r: requestId.toString(),
     });
   }
 
   // Filter out requests that are already fulfilled
-  const multicallData = requests.map(({ r }) => {
+  const multicallRequests = requests.slice(0, MAX_MULTICALL_REQUESTS);
+  const multicallData = multicallRequests.map(({ r }) => {
     return {
       target: consumer.address,
       callData: consumer.interface.encodeFunctionData("requestPending", [r]),
@@ -112,6 +119,7 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
   )) as { blockNumber: BigNumber; returnData: string[] };
 
   requests = requests.filter((_, index) => {
+    if (index >= MAX_MULTICALL_REQUESTS) return true; // Keep requests that were not included in multicall.
     // Converting returnData to boolean. returnData is in bytes32 hexadecimal form (0x..00 or 0x..01).
     const isRequestPending = !!parseInt(returnData[index]);
     return isRequestPending;
@@ -138,7 +146,9 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
   }
 
   // Process a random request.
-  const randomRequestIndex = Math.floor(Math.random() * requests.length);
+  const randomRequestIndex = Math.floor(
+    Math.random() * Math.min(MAX_MULTICALL_REQUESTS, requests.length)
+  );
   const requestToFulfill = requests[randomRequestIndex];
 
   const logsToProcess = await provider.getLogs({
