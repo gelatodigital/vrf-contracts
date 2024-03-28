@@ -53,7 +53,7 @@ const config: HardhatUserConfig = {
   w3f: {
     rootDir: "./web3-functions",
     debug: false,
-    networks: ["polygon", "mumbai", "goerli", "baseGoerli"], //(multiChainProvider) injects provider for these networks
+    networks: ["polygon", "mumbai", "goerli", "baseGoerli", "blastsepolia"], //(multiChainProvider) injects provider for these networks
   },
 
   namedAccounts: {
@@ -141,6 +141,11 @@ const config: HardhatUserConfig = {
     mumbai: {
       chainId: 80001,
       url: `https://polygon-mumbai.g.alchemy.com/v2/${ALCHEMY_ID}`,
+      accounts: PRIVATE_KEY ? [PRIVATE_KEY] : [],
+    },
+    blastsepolia: {
+      chainId: 168587773,
+      url: `https://sepolia.blast.io`,
       accounts: PRIVATE_KEY ? [PRIVATE_KEY] : [],
     },
   },

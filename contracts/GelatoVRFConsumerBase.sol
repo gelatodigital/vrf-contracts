@@ -94,6 +94,8 @@ abstract contract GelatoVRFConsumerBase is IGelatoVRFConsumer {
 
             delete requestedHash[requestId];
         }
+
+        delete requestedHash[requestId];
     }
 
     /// @notice Computes and returns the round number of drand to request randomness from.
