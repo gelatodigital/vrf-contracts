@@ -91,6 +91,8 @@ abstract contract GelatoVRFConsumerBase is IGelatoVRFConsumer {
 
             _fulfillRandomness(randomness, requestId, extraData);
             requestPending[requestId] = false;
+
+            delete requestedHash[requestId];
         }
     }
 
