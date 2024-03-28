@@ -69,14 +69,34 @@ async function fetchDrandResponseWithCaching(round: number) {
   return { round, randomness };
 }
 
+async function fetchBeaconWithTimeout(
+  client: HttpChainClient,
+  round: number,
+  timeout: number = 5_000
+) {
+  return new Promise((resolve, reject) => {
+    const timeoutId = setTimeout(() => reject(new Error(`Timeout`)), timeout);
+    fetchBeacon(client, round)
+      .then((response) => {
+        clearTimeout(timeoutId);
+        resolve(response);
+      })
+      .catch((err) => {
+        clearTimeout(timeoutId);
+        reject(err);
+      });
+  });
+}
+
 async function fetchDrandResponse(round: number) {
   console.log(`Fetching randomness from round ${round}`);
   const errors = [];
 
   for (const client of clientCache.getClients()) {
     try {
-      return await fetchBeacon(client, round);
+      return await fetchBeaconWithTimeout(client, round);
     } catch (err) {
+      console.error(`Failed to fetch randomness: ${(err as Error).message}`);
       errors.push(err);
     }
   }
