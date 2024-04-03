@@ -6,6 +6,8 @@
   "private": false,
   "scripts": {
     "build": "yarn clean && yarn install && yarn compile && npx tsc",
+    "run:vrf-event-trigger": "npx hardhat w3f-run vrf-event-trigger --network sepolia --logs --debug",
+    "run:vrf-fallback": "npx hardhat w3f-run vrf-fallback --network sepolia --logs --debug",
     "compile": "npx hardhat compile --force",
     "clean": "rm -rf dist",
     "deploy": "npx hardhat deploy",
