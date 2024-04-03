@@ -16,8 +16,10 @@ import { MockVRFConsumer } from "../typechain";
 const { deployments, w3f, ethers } = hre;
 
 import { sleep } from "drand-client/util";
+
 import fetch from "node-fetch";
-global.fetch = fetch;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(global as any).fetch = fetch;
 
 const DRAND_OPTIONS: ChainOptions = {
   disableBeaconVerification: false,
@@ -94,7 +96,7 @@ describe("GelatoVRFConsumerBase Test Suite", function () {
       const timeOfRound = round * quicknet.period + quicknet.genesis_time;
       await sleep((timeOfRound - timeNowSec) * 1000);
 
-      const exec = await vrf.run({ userArgs });
+      const exec = await vrf.run("onRun", { userArgs });
       const res = exec.result as Web3FunctionResultV2;
 
       if (!res.canExec) assert.fail(res.message);
@@ -127,7 +129,7 @@ describe("GelatoVRFConsumerBase Test Suite", function () {
   });
 
   it("Doesn't execute if no event was emitted", async () => {
-    const exec = await vrf.run({ userArgs });
+    const exec = await vrf.run("onRun", { userArgs });
     const res = exec.result as Web3FunctionResultV2;
 
     if (!res.canExec) assert.fail(res.message);

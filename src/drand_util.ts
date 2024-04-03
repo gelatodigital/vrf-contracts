@@ -4,6 +4,7 @@ import {
   ChainOptions,
   HttpCachingChain,
   HttpChainClient,
+  RandomnessBeacon,
   fetchBeacon,
   roundTime,
 } from "drand-client";
@@ -72,8 +73,8 @@ async function fetchDrandResponseWithCaching(round: number) {
 async function fetchBeaconWithTimeout(
   client: HttpChainClient,
   round: number,
-  timeout: number = 5_000
-) {
+  timeout = 5_000
+): Promise<RandomnessBeacon> {
   return new Promise((resolve, reject) => {
     const timeoutId = setTimeout(() => reject(new Error(`Timeout`)), timeout);
     fetchBeacon(client, round)
