@@ -17,7 +17,8 @@ import { MockCLVRFConsumer, VRFCoordinatorV2Adapter } from "../typechain";
 const { deployments, w3f, ethers } = hre;
 
 import fetch from "node-fetch";
-global.fetch = fetch;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(global as any).fetch = fetch;
 
 const DRAND_OPTIONS: ChainOptions = {
   disableBeaconVerification: false,
@@ -91,7 +92,7 @@ describe("Chainlink Adapter Test Suite", function () {
     await mockConsumer.connect(user).requestRandomWords(numWords);
     const requestId = await mockConsumer.requestId();
 
-    const exec = await vrf.run({ userArgs });
+    const exec = await vrf.run("onRun", { userArgs });
     const res = exec.result as Web3FunctionResultV2;
     const round = roundAt(Date.now(), quicknet);
 
@@ -125,7 +126,7 @@ describe("Chainlink Adapter Test Suite", function () {
   });
 
   it("Doesn't execute if no event was emitted", async () => {
-    const exec = await vrf.run({ userArgs });
+    const exec = await vrf.run("onRun", { userArgs });
     const res = exec.result as Web3FunctionResultV2;
 
     if (!res.canExec) assert.fail(res.message);
