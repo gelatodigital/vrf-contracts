@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {IGelatoVRFConsumer} from "contracts/IGelatoVRFConsumer.sol";
+import {IGelatoVRFConsumer} from "./IGelatoVRFConsumer.sol";
 
 /// @title GelatoVRFConsumerBase
 /// @dev This contract can be inherit by upgradeable smart contracts as well.
