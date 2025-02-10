@@ -11,6 +11,7 @@ import Multicall3Abi from "./abis/Multicall3.json";
 const MAX_FILTER_RANGE = 500; // Limit range of events to comply with rpc providers.
 const MAX_FILTER_REQUESTS = 2; // Limit number of requests on every execution to avoid hitting timeout.
 const MAX_MULTICALL_REQUESTS = 100; // Limit range of events to comply with rpc providers.
+const MAX_MULTICALL_ITERATIONS = 10; // Maximum nr of multicall calls
 
 const REQUEST_AGE = 60; // 1 minute. (Triggers fallback if request not fulfilled after time.)
 
@@ -78,9 +79,9 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
   }
 
   // h: blockHash, t: timestamp, i: index, r: requestId
-  let requests: { h: string; t: number; i: number; r: string }[] = JSON.parse(
-    (await storage.get("requests")) ?? "[]"
-  );
+  type Request = { h: string; t: number; i: number; r: string };
+
+  let requests: Request[] = JSON.parse((await storage.get("requests")) ?? "[]");
 
   // Collect all requests made by consumer.
   for (const log of logs) {
@@ -106,26 +107,44 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
   }
 
   // Filter out requests that are already fulfilled
-  const multicallRequests = requests.slice(0, MAX_MULTICALL_REQUESTS);
-  const multicallData = multicallRequests.map(({ r }) => {
-    return {
-      target: consumer.address,
-      callData: consumer.interface.encodeFunctionData("requestPending", [r]),
-    };
-  });
+  const pendingRequests: Request[] = [];
+  let multicallCount = 0;
 
-  const { returnData } = (await multicall.callStatic.aggregate(
-    multicallData
-  )) as { blockNumber: BigNumber; returnData: string[] };
+  for (let i = 0; i < requests.length; i += MAX_MULTICALL_REQUESTS) {
+    if (multicallCount >= MAX_MULTICALL_ITERATIONS) {
+      pendingRequests.push(...requests.slice(i));
 
-  requests = requests.filter((_, index) => {
-    if (index >= MAX_MULTICALL_REQUESTS) return true; // Keep requests that were not included in multicall.
-    // Converting returnData to boolean. returnData is in bytes32 hexadecimal form (0x..00 or 0x..01).
-    const isRequestPending = !!parseInt(returnData[index]);
-    return isRequestPending;
-  });
+      break;
+    }
 
-  await storage.set("requests", JSON.stringify(requests));
+    const batch = requests.slice(i, i + MAX_MULTICALL_REQUESTS);
+
+    const multicallData = batch.map(({ r }) => {
+      return {
+        target: consumer.address,
+        callData: consumer.interface.encodeFunctionData("requestPending", [r]),
+      };
+    });
+
+    const { returnData } = (await multicall.callStatic.aggregate(
+      multicallData
+    )) as { blockNumber: BigNumber; returnData: string[] };
+
+    batch.forEach((request, index) => {
+      // Converting returnData to boolean. returnData is in bytes32 hexadecimal form (0x..00 or 0x..01).
+      const isRequestPending = !!parseInt(returnData[index]);
+
+      if (isRequestPending) {
+        pendingRequests.push(request);
+      }
+    });
+
+    multicallCount += 1;
+  }
+
+  requests = pendingRequests;
+
+  await storage.set("requests", JSON.stringify(pendingRequests));
   await storage.set("lastBlock", lastBlock.toString());
 
   console.log(`${requests.length} pending requests.`);
